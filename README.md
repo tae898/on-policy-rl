@@ -1,6 +1,6 @@
-# Rainbow DQN vs Modern PPO Comparison
+# Rainbow DQN vs PPO Comparison
 
-A configurable implementation comparing Rainbow DQN and Modern PPO algorithms on the CartPole-v1 environment. Both algorithms have flaggable features to study the impact of different components.
+A configurable implementation comparing Rainbow DQN and PPO algorithms on the CartPole-v1 environment. Both algorithms have flaggable features to study the impact of different components.
 
 ## 🔧 Configuration
 
@@ -20,7 +20,7 @@ Both algorithms use a comprehensive configuration system with flaggable features
 }
 ```
 
-### Modern PPO Features
+### PPO Features
 ```python
 "ppo": {
     "use_clipped_objective": True,          # Clipped Objective
@@ -63,7 +63,7 @@ Both algorithms use a comprehensive configuration system with flaggable features
 
 ### Vanilla PPO
 ```python
-# Disable modern PPO features
+# Disable PPO features
 "use_clipped_objective": False,
 "use_gae": False,
 "use_entropy_regularization": False,
@@ -113,7 +113,7 @@ Each feature can be toggled independently to study its impact:
 - Stable learning with proper feature selection
 - Good sample efficiency when features are well-matched to environment
 
-**Modern PPO:**
+**PPO:**
 - Fast training due to batch learning efficiency
 - Robust across diverse environments
 - Simple to tune and deploy
