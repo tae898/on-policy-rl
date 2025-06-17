@@ -1,4 +1,4 @@
-# Reinforcement Learning Teaching Series
+# Reinforcement Learning Learning Series
 
 A comprehensive educational series of Jupyter notebooks teaching reinforcement learning
 algorithms from fundamentals to state-of-the-art. Each notebook demonstrates different
@@ -215,7 +215,7 @@ env = gym.make(
 sudo apt install swig build-essential python3-dev
 
 # Python packages
-pip install gymnasium[box2d] torch torchvision matplotlib numpy
+pip install 'gymnasium[box2d]>1.0' torch torchvision matplotlib numpy
 ```
 
 ### Recommended Learning Path
@@ -260,7 +260,7 @@ pip install gymnasium[box2d] torch torchvision matplotlib numpy
 
 ---
 
-_This teaching series emphasizes deep understanding over breadth, focusing on the
+_This learning series emphasizes deep understanding over breadth, focusing on the
 fundamental paradigms that underlie all modern RL algorithms. Each section is designed
 to build your intuition, technical skills, and appreciation for the elegance and
 complexity of reinforcement learning._
