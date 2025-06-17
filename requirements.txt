@@ -1,2 +1,4 @@
-gymnasium==0.29.1
+gymnasium>1.0
+swig
+gymnasium[box2d]
 torch
