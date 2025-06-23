@@ -25,7 +25,7 @@ def preprocess_state(state):
 def cleanup_videos(video_folder, video_prefix=None):
     """
     Clean up existing video files before starting new training.
-    
+
     Args:
         video_folder: Path to video folder
         video_prefix: Optional prefix to filter which videos to delete (None deletes all)
@@ -34,18 +34,18 @@ def cleanup_videos(video_folder, video_prefix=None):
         if not os.path.exists(video_folder):
             print(f"Video folder {video_folder} doesn't exist, nothing to clean up.")
             return
-        
+
         if video_prefix:
             # Delete only videos with specific prefix
             pattern = os.path.join(video_folder, f"{video_prefix}-episode-*.mp4")
             video_files = glob.glob(pattern)
             if video_files:
-                print(f"🗑️ Cleaning up {len(video_files)} existing videos with prefix '{video_prefix}'...")
+                print(
+                    f"🗑️ Cleaning up {len(video_files)} existing videos with prefix '{video_prefix}'..."
+                )
                 for video_file in video_files:
                     os.remove(video_file)
                     print(f"   Deleted: {os.path.basename(video_file)}")
-            else:
-                print(f"No existing videos found with prefix '{video_prefix}' in {video_folder}")
         else:
             # Delete entire folder and recreate
             if os.listdir(video_folder):  # Check if folder has any content
@@ -55,13 +55,17 @@ def cleanup_videos(video_folder, video_prefix=None):
                 print(f"   Video folder cleaned and recreated.")
             else:
                 print(f"Video folder {video_folder} is already empty.")
-                
+
     except Exception as e:
         print(f"Warning: Error cleaning up videos: {e}")
 
 
 def create_env_with_wrappers(
-    config, is_continuous, record_videos=False, video_prefix="training", cleanup_existing=True
+    config,
+    is_continuous,
+    record_videos=False,
+    video_prefix="training",
+    cleanup_existing=True,
 ):
     """Create environment with standard wrappers."""
     env = gym.make(
@@ -76,16 +80,16 @@ def create_env_with_wrappers(
         # Clean up existing videos first
         if cleanup_existing:
             cleanup_videos(config["video_folder"], video_prefix)
-        
+
         # Ensure video folder exists
         os.makedirs(config["video_folder"], exist_ok=True)
-        
+
         # Custom episode trigger that uses actual episode numbers
         def episode_trigger(episode_id):
             # episode_id starts from 0, so we add 1 to match our episode numbering
             actual_episode = episode_id + 1
             return actual_episode % config["video_record_interval"] == 0
-        
+
         env = RecordVideo(
             env,
             video_folder=config["video_folder"],
@@ -102,7 +106,7 @@ def create_env_with_wrappers(
 def display_videos_grid(video_folder, video_prefix, max_videos=None):
     """
     Display all videos from the training session in a horizontal grid with infinite looping.
-    
+
     Args:
         video_folder: Path to video folder
         video_prefix: Prefix used for video files
@@ -112,23 +116,24 @@ def display_videos_grid(video_folder, video_prefix, max_videos=None):
         # Find all video files matching the pattern
         pattern = os.path.join(video_folder, f"{video_prefix}-episode-*.mp4")
         video_files = glob.glob(pattern)
-        
+
         if not video_files:
             print(f"No videos found in {video_folder} with prefix {video_prefix}")
             return
-            
+
         # Sort video files by episode number
         import re
+
         def extract_episode_num(filename):
-            match = re.search(r'episode-(\d+)\.mp4', filename)
+            match = re.search(r"episode-(\d+)\.mp4", filename)
             return int(match.group(1)) if match else 0
-        
+
         video_files.sort(key=extract_episode_num)
-        
+
         # Limit number of videos if specified
         if max_videos:
             video_files = video_files[-max_videos:]  # Show most recent videos
-        
+
         # Convert absolute paths to relative paths for web display
         relative_videos = []
         for video_file in video_files:
@@ -136,21 +141,25 @@ def display_videos_grid(video_folder, video_prefix, max_videos=None):
                 relative_videos.append(os.path.relpath(video_file))
             else:
                 relative_videos.append(video_file)
-        
+
         # Extract episode numbers for display
         episode_nums = [extract_episode_num(os.path.basename(v)) for v in video_files]
-        
-        print(f"\n📹 Displaying {len(relative_videos)} training videos (episodes: {episode_nums}):")
-        
+
+        print(
+            f"\n📹 Displaying {len(relative_videos)} training videos (episodes: {episode_nums}):"
+        )
+
         # Create HTML for horizontal video grid with infinite looping
         videos_per_row = min(3, len(relative_videos))  # Max 3 videos per row
         video_width = max(300, 900 // videos_per_row)  # Responsive width
-        
+
         html_content = """
         <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
         """
-        
-        for i, (video_path, episode_num) in enumerate(zip(relative_videos, episode_nums)):
+
+        for i, (video_path, episode_num) in enumerate(
+            zip(relative_videos, episode_nums)
+        ):
             html_content += f"""
             <div style="text-align: center;">
                 <p style="margin: 5px 0; font-weight: bold;">Episode {episode_num}</p>
@@ -160,14 +169,14 @@ def display_videos_grid(video_folder, video_prefix, max_videos=None):
                 </video>
             </div>
             """
-            
+
             # Start new row after every 3 videos
             if (i + 1) % 3 == 0 and i < len(relative_videos) - 1:
                 html_content += """
         </div>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px;">
                 """
-        
+
         html_content += """
         </div>
         <style>
@@ -178,9 +187,9 @@ def display_videos_grid(video_folder, video_prefix, max_videos=None):
             }
         </style>
         """
-        
+
         display(HTML(html_content))
-        
+
     except Exception as e:
         print(f"Error displaying videos: {e}")
 
@@ -189,7 +198,7 @@ def display_latest_video(video_folder, video_prefix, episode_num):
     """
     Display all videos collected so far in a grid format with infinite looping.
     This replaces the single video display to show training progression.
-    
+
     Args:
         video_folder: Path to video folder
         video_prefix: Prefix used for video files
@@ -197,111 +206,33 @@ def display_latest_video(video_folder, video_prefix, episode_num):
     """
     # Clear previous output to avoid stacking
     clear_output(wait=True)
-    
+
     # Display all videos collected so far
-    display_videos_grid(video_folder, video_prefix, max_videos=10)  # Limit to last 10 videos
+    display_videos_grid(
+        video_folder, video_prefix, max_videos=10
+    )  # Limit to last 10 videos
 
-
-def test_agent(policy, config, is_continuous=False, record_video=True, num_episodes=3):
-    """
-    Test a trained agent and optionally record videos.
-    
-    Args:
-        policy: Trained policy network
-        config: Configuration dictionary
-        is_continuous: Whether to use continuous action space
-        record_video: Whether to record test videos
-        num_episodes: Number of test episodes to run
-    """
-    action_type = "continuous" if is_continuous else "discrete"
-    print(f"\n{'='*60}")
-    print(f"TESTING TRAINED AGENT ({action_type.upper()} ACTIONS)")
-    print(f"{'='*60}")
-    
-    # Create test environment
-    test_config = config.copy()
-    if record_video:
-        test_config["video_folder"] = f"videos/test_{action_type}"
-        test_config["video_record_interval"] = 1  # Record every episode during testing
-    
-    env = create_env_with_wrappers(
-        test_config, 
-        is_continuous, 
-        record_videos=record_video,
-        video_prefix=f"test_{action_type}",
-        cleanup_existing=True  # Clean up existing test videos
-    )
-    
-    policy.eval()  # Set to evaluation mode
-    
-    # Get the device from the policy network
-    device = next(policy.parameters()).device
-    
-    test_scores = []
-    
-    for episode in range(1, num_episodes + 1):
-        state, _ = env.reset(seed=config["seed"] + 1000 + episode)
-        preprocessed = preprocess_state(state).to(device)  # Move to correct device
-        
-        episode_reward = 0
-        step_count = 0
-        
-        with torch.no_grad():  # No gradients needed during testing
-            while True:
-                current_state = preprocessed.unsqueeze(0)
-                
-                # Get action from policy (deterministic for testing)
-                dist = policy(current_state)
-                if is_continuous:
-                    action = dist.mean  # Use mean instead of sampling for consistent testing
-                    action_to_env = policy.clip_action(action).flatten()
-                else:
-                    action = dist.probs.argmax(dim=-1)  # Use most likely action
-                    action_to_env = action.item()
-                
-                next_state, reward, terminated, truncated, info = env.step(action_to_env)
-                done = terminated or truncated
-                
-                episode_reward += reward
-                step_count += 1
-                preprocessed = preprocess_state(next_state).to(device)  # Move to correct device
-                
-                if done:
-                    break
-        
-        test_scores.append(episode_reward)
-        print(f"Test Episode {episode}: Score = {episode_reward:.2f}, Steps = {step_count}")
-        
-        # Display video after each test episode if recording
-        if record_video:
-            display_latest_video(
-                test_config["video_folder"], 
-                f"test_{action_type}", 
-                episode
-            )
-    
-    env.close()
-    
-    avg_score = np.mean(test_scores)
-    print(f"\nTest Results ({num_episodes} episodes):")
-    print(f"Average Score: {avg_score:.2f}")
-    print(f"Score Range: {min(test_scores):.2f} to {max(test_scores):.2f}")
-    
-    return test_scores
+    # Print video info without interfering with tqdm
+    try:
+        pattern = os.path.join(video_folder, f"{video_prefix}-episode-*.mp4")
+        video_files = glob.glob(pattern)
+        print(f"📹 {len(video_files)} training videos available in {video_folder}")
+    except Exception as e:
+        print(f"Note: {e}")
 
 
 def show_final_video_summary(video_folder, video_prefix, action_type):
     """
     Show a final summary of all training videos after training completion.
-    
+
     Args:
         video_folder: Path to video folder
-        video_prefix: Prefix used for video files  
+        video_prefix: Prefix used for video files
         action_type: "Discrete" or "Continuous" for labeling
     """
     print(f"\n{'='*60}")
     print(f"FINAL VIDEO SUMMARY - {action_type.upper()} TRAINING")
     print(f"{'='*60}")
-    
+
     # Display all videos without limit
     display_videos_grid(video_folder, video_prefix, max_videos=None)

@@ -14,7 +14,7 @@ __version__ = "1.0.0"
 
 from .config import create_base_config, set_seeds
 from .environment import (cleanup_videos, create_env_with_wrappers,
-                          display_latest_video, preprocess_state, test_agent)
+                          display_latest_video, preprocess_state)
 from .networks import PolicyNetwork
 from .visualization import (get_moving_average, plot_training_results,
                             plot_variance_analysis)
@@ -23,7 +23,6 @@ __all__ = [
     "preprocess_state",
     "create_env_with_wrappers",
     "display_latest_video", 
-    "test_agent",
     "cleanup_videos",
     "plot_training_results",
     "plot_variance_analysis",

@@ -8,7 +8,7 @@ RL paradigms using **LunarLander-v3** for consistent comparison across all algor
 
 For this entire learning series, we use **LunarLander-v3** exclusively. This environment is perfect for RL education because it offers both discrete and continuous action spaces, rich vector observations, and clear success/failure conditions.
 
-**Reference**: [Gymnasium Box2D Environments](https://gymnasium.farama.org/environments/box2d/)
+**Reference**: [Gymnasium Lunar Lander](https://gymnasium.farama.org/environments/box2d/lunar_lander/)
 
 ### LunarLander-v3 🚀
 
@@ -16,6 +16,7 @@ Classic rocket trajectory optimization - land the lunar module safely on the lan
 
 **Observation**: `Box((8,), float32)` - Position, velocity, angle, angular velocity, leg ground contact
 **Action Spaces**:
+
 - **Discrete**: 4 actions [do_nothing, fire_left, fire_main, fire_right]
 - **Continuous**: `Box(-1, +1, (2,), float32)` - [main_engine_throttle, lateral_booster_throttle]
 
@@ -29,11 +30,11 @@ Classic rocket trajectory optimization - land the lunar module safely on the lan
 - **Clear Success Criteria**: Landing successfully gives +100, crashing gives -100
 - **Fast Feedback**: Episodes are relatively short, enabling rapid experimentation
 - **Educational Value**: Classic trajectory optimization problem that teaches fundamental RL concepts
-- **No Visual Complexity**: Vector observations avoid the need for CNN architectures
+- **No Visual Complexity**: Vector observations allow us to use simple MLPs
 
 ## 📚 Notebook Series
 
-### 1. REINFORCE (On-Policy Policy Gradients)
+### 01. REINFORCE (On-Policy Policy Gradients)
 
 - **Focus**: Pure policy gradients, Monte Carlo returns
 - **Action Space**: Both discrete AND continuous
@@ -42,48 +43,56 @@ Classic rocket trajectory optimization - land the lunar module safely on the lan
   - Discrete REINFORCE (categorical policy)
   - Continuous REINFORCE (Gaussian policy)
 
-### 2. Vanilla DQN (Off-Policy Value-Based)
+### 02. Vanilla DQN (Off-Policy Value-Based)
 
 - **Focus**: Q-learning, Bellman equations, experience replay
 - **Action Space**: Discrete only
 - **Key Concepts**: Q-function approximation, target networks, ε-greedy exploration
 
-### 3. Vanilla Actor-Critic (Bridge Methods)
+### 03. Rainbow DQN (Advanced Value-Based)
+
+- **Focus**: Comprehensive DQN improvements, state-of-the-art value methods
+- **Action Space**: Discrete only
+- **Key Concepts**: Double DQN, Dueling networks, Prioritized replay, Noisy networks, Distributional RL, Multi-step learning
+
+### 04. Vanilla Actor-Critic (Bridge Methods)
 
 - **Focus**: Combining value and policy methods, on-policy vs off-policy
 - **Action Space**: Both discrete AND continuous
-- **Key Concepts**: V(s) vs Q(s,a), Bellman expectation vs optimality equations
+- **Key Concepts**: $V(s)$ vs $Q(s,a)$, Bellman expectation vs optimality equations
 - **Variants**:
   - On-policy discrete (V-function critic)
   - Off-policy continuous (Q-function critic)
 
-### 4. Off-Policy Continuous Control Evolution
+### 05. DDPG (Deep Deterministic Policy Gradients)
 
-- **Focus**: Algorithm debugging, systematic improvements, and theoretical breakthroughs
+- **Focus**: Foundation of off-policy continuous control
 - **Action Space**: Continuous only
+- **Key Concepts**: Deterministic policy gradients, actor-critic for continuous actions, exploration noise
+- **Key Issues**: Overestimation bias, instability, poor exploration
 
-**Part A: DDPG - The Foundation (and its problems)**
+### 06. TD3 (Twin Delayed Deep Deterministic Policy Gradients)
 
-- Basic off-policy actor-critic for continuous control
-- Key issues: overestimation bias, instability, poor exploration
-
-**Part B: TD3 - Systematic Debugging**
-
+- **Focus**: Systematic debugging and improvement of DDPG
+- **Action Space**: Continuous only
 - **Key Concepts**: Twin critics, delayed updates, target policy smoothing
 - **Educational Focus**: How to identify and fix specific RL problems
 - **Meta-Skills**: Algorithm debugging methodology, ablation studies
 
-**Part C: SAC - Theoretical Revolution**
+### 07. SAC (Soft Actor-Critic)
 
-- **Key Concepts**: Maximum entropy framework, automatic exploration tuning
+- **Focus**: Maximum entropy reinforcement learning
+- **Action Space**: Continuous only
+- **Key Concepts**: Maximum entropy framework, automatic exploration tuning, temperature parameter
 - **Focus**: Principled approach to exploration and robustness
 
-**Part D: Algorithm Comparison & Selection**
+### 08. Continuous Control Comparison
 
-- When to use DDPG vs TD3 vs SAC
-- Performance benchmarks and practical considerations
+- **Focus**: Algorithm comparison, selection criteria, and performance analysis
+- **Action Space**: Continuous only
+- **Key Concepts**: When to use DDPG vs TD3 vs SAC, performance benchmarks, practical considerations
 
-### 5. PPO (Modern On-Policy)
+### 09. PPO (Proximal Policy Optimization)
 
 - **Focus**: Trust region concepts, clipped objectives
 - **Action Space**: Both discrete AND continuous
@@ -105,6 +114,7 @@ By completing this series, you will understand:
 
 ### Algorithm Development Skills
 
+- **Variance Analysis**: Understanding and measuring gradient variance in policy methods
 - **Systematic Debugging**: How to identify and fix specific RL problems (TD3 focus)
 - **Algorithm Evolution**: Understanding how research progresses incrementally
 - **Performance Analysis**: Comparing algorithms fairly across environments
@@ -119,15 +129,16 @@ By completing this series, you will understand:
 
 ## 📈 Algorithm Coverage Matrix
 
-| Algorithm    | Paradigm   | Data Usage    | Action Space      | Key Innovation                |
-| ------------ | ---------- | ------------- | ----------------- | ----------------------------- |
-| REINFORCE    | On-Policy  | Fresh Only    | Both              | Pure policy gradients         |
-| DQN          | Off-Policy | Replay Buffer | Discrete Only     | Deep Q-learning               |
-| Actor-Critic | Both       | Both          | Both              | Value + Policy combination    |
-| DDPG         | Off-Policy | Replay Buffer | Continuous Only   | Continuous control foundation |
-| TD3          | Off-Policy | Replay Buffer | Continuous Only   | Systematic debugging          |
-| SAC          | Off-Policy | Replay Buffer | Continuous Only   | Maximum entropy               |
-| PPO          | On-Policy  | Fresh Only    | Both              | Stable policy updates         |
+| Algorithm    | Paradigm   | Data Usage    | Action Space    | Key Innovation                 |
+| ------------ | ---------- | ------------- | --------------- | ------------------------------ |
+| REINFORCE    | On-Policy  | Fresh Only    | Both            | Pure policy gradients          |
+| Vanilla DQN  | Off-Policy | Replay Buffer | Discrete Only   | Deep Q-learning                |
+| Rainbow DQN  | Off-Policy | Replay Buffer | Discrete Only   | Comprehensive DQN improvements |
+| Actor-Critic | Both       | Both          | Both            | Value + Policy combination     |
+| DDPG         | Off-Policy | Replay Buffer | Continuous Only | Continuous control foundation  |
+| TD3          | Off-Policy | Replay Buffer | Continuous Only | Systematic debugging           |
+| SAC          | Off-Policy | Replay Buffer | Continuous Only | Maximum entropy                |
+| PPO          | On-Policy  | Fresh Only    | Both            | Stable policy updates          |
 
 ## 🛠️ Technical Implementation
 
@@ -135,16 +146,23 @@ By completing this series, you will understand:
 
 ```
 rl/
-├── README.md                    # This documentation
-├── 1.reinforce.ipynb          # REINFORCE algorithm notebook
-├── 2.dqn.ipynb                # DQN algorithm notebook (coming soon)
-├── rl_utils/                   # Shared utility package
-│   ├── __init__.py            # Package initialization
-│   ├── config.py              # Configuration management
-│   ├── environment.py         # Environment wrappers and preprocessing
-│   ├── networks.py            # Neural network architectures
-│   └── visualization.py       # Plotting and analysis functions
-└── videos/                     # Generated training/test videos
+├── README.md                      # This documentation
+├── 01.reinforce.ipynb            # REINFORCE algorithm notebook
+├── 02.dqn.ipynb                  # Vanilla DQN algorithm notebook
+├── 03.rainbow-dqn.ipynb          # Rainbow DQN algorithm notebook
+├── 04.actor-critic.ipynb         # Actor-Critic algorithm notebook
+├── 05.ddpg.ipynb                 # DDPG algorithm notebook
+├── 06.td3.ipynb                  # TD3 algorithm notebook
+├── 07.sac.ipynb                  # SAC algorithm notebook
+├── 08.continuous-comparison.ipynb # Continuous control algorithm comparison
+├── 09.ppo.ipynb                  # PPO algorithm notebook
+├── rl_utils/                      # Shared utility package
+│   ├── __init__.py               # Package initialization
+│   ├── config.py                 # Configuration management
+│   ├── environment.py            # Environment wrappers and preprocessing
+│   ├── networks.py               # Neural network architectures
+│   └── visualization.py          # Plotting and analysis functions
+└── videos/                        # Generated training/test videos
 ```
 
 ### RL Utils Package
@@ -152,28 +170,33 @@ rl/
 To keep notebooks focused on algorithm learning, we've extracted common infrastructure into the `rl_utils` package:
 
 **Environment utilities** (`rl_utils.environment`):
+
 - `preprocess_state()`: Standardized state preprocessing for LunarLander
 - `create_env_with_wrappers()`: Environment creation with video recording and statistics
 - `test_agent()`: Standardized agent testing with visualization
 
 **Neural networks** (`rl_utils.networks`):
+
 - `PolicyNetwork`: Flexible policy network supporting both discrete and continuous actions
 - Automatic parameter counting and network information printing
 - Built-in action clipping for continuous control
 
 **Visualization** (`rl_utils.visualization`):
+
 - `plot_training_results()`: Standardized training curve plotting
 - `plot_variance_analysis()`: REINFORCE-specific variance analysis
 - `plot_comparison()`: Multi-algorithm comparison plotting
 - `get_moving_average()`: Robust smoothing for noisy data
 
 **Configuration** (`rl_utils.config`):
+
 - `create_base_config()`: Consistent configuration across notebooks
 - `set_seeds()`: Reproducible random seeding
 
 ### Notebook Organization
 
 Each algorithm notebook now follows a consistent structure:
+
 1. **Algorithm Introduction**: Theory and mathematical foundation
 2. **Setup**: Import utilities and create configuration
 3. **Agent Implementation**: Algorithm-specific code only
@@ -182,6 +205,7 @@ Each algorithm notebook now follows a consistent structure:
 6. **Comparative Analysis**: Performance comparison and insights
 
 This separation allows:
+
 - **Focused Learning**: Notebooks contain only algorithm-specific content
 - **Code Reuse**: Common utilities shared across all notebooks
 - **Easy Maintenance**: Infrastructure improvements benefit all algorithms
@@ -227,49 +251,18 @@ This separation allows:
 sudo apt install swig build-essential python3-dev
 
 # Python packages
-pip install 'gymnasium[box2d]>=1.0' torch torchvision matplotlib numpy jupyter pprint
+pip install 'gymnasium[box2d]>=1.0' torch torchvision matplotlib numpy jupyter pprint tqdm
 
 # Clone the repository
 git clone <repository-url>
 cd rl
-
-# The rl_utils package is automatically available when running notebooks from the rl/ directory
 ```
 
 ### Running the Notebooks
 
 1. Start Jupyter from the `rl/` directory:
+
 ```bash
 cd rl/
 jupyter notebook
-```
-
-2. Open `1.reinforce.ipynb` to start with the REINFORCE algorithm
-
-3. Each notebook is self-contained but uses the shared `rl_utils` package
-
-### Package Usage Example
-
-```python
-from rl_utils import create_base_config, PolicyNetwork, plot_training_results
-from rl_utils import create_env_with_wrappers, test_agent
-
-# Create standardized configuration
-config = create_base_config()
-
-# Create environment with standard wrappers
-env = create_env_with_wrappers(config, is_continuous=False, record_videos=True)
-
-# Create policy network with parameter counting
-policy = PolicyNetwork(observation_dim=8, action_space=env.action_space, 
-                      is_continuous=False, network_config=config["policy_network"])
-policy.print_network_info()  # Prints parameter count and architecture info
-
-# ... training code ...
-
-# Standardized result visualization
-plot_training_results(scores, losses, config, "Discrete")
-
-# Test the trained agent
-test_agent(policy, config, is_continuous=False, record_video=True)
 ```

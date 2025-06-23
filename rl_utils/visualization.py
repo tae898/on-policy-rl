@@ -30,8 +30,9 @@ def plot_training_results(scores, losses, config, action_type, algorithm_name="A
                 label=f'Smoothed Score ({config["scores_window_size"]}ep)', 
                 color='blue' if action_type == 'Discrete' else 'red', linewidth=2)
     
-    # LunarLander target score
-    ax1.axhline(y=200, color='g', linestyle='--', label='Target Score (200)')
+    # Use configurable target score
+    ax1.axhline(y=config["target_score"], color='g', linestyle='--', 
+                label=f'Target Score ({config["target_score"]})')
     
     ax1.set_ylabel('Score')
     ax1.legend(loc='upper left')
@@ -46,7 +47,7 @@ def plot_training_results(scores, losses, config, action_type, algorithm_name="A
 
     plt.show()
 
-def plot_variance_analysis(agent, scores, action_type, algorithm_name="Algorithm"):
+def plot_variance_analysis(agent, scores, action_type, config, algorithm_name="Algorithm"):
     """
     Visualize variance and training stability metrics.
     Generic function that works with any algorithm that tracks gradient norms and episode returns.
@@ -72,12 +73,12 @@ def plot_variance_analysis(agent, scores, action_type, algorithm_name="Algorithm
     if len(agent.gradient_norms) > 0:
         ax2.plot(episodes, agent.gradient_norms, alpha=0.6, color='purple')
         
-        # Handle moving average with proper x-axis alignment
-        if len(agent.gradient_norms) >= 20:
-            smoothed, x_offset = get_moving_average(agent.gradient_norms, window=20)
+        # Use config window size for smoothing
+        if len(agent.gradient_norms) >= config["scores_window_size"]:
+            smoothed, x_offset = get_moving_average(agent.gradient_norms, window=config["scores_window_size"])
             smoothed_episodes = range(x_offset + 1, x_offset + 1 + len(smoothed))
             ax2.plot(smoothed_episodes, smoothed, 
-                     color='darkviolet', linewidth=2, label='Smoothed (20ep)')
+                     color='darkviolet', linewidth=2, label=f'Smoothed ({config["scores_window_size"]}ep)')
     ax2.set_xlabel('Episode')
     ax2.set_ylabel('Gradient Norm')
     ax2.set_title('Gradient Magnitude Over Time')
@@ -89,12 +90,12 @@ def plot_variance_analysis(agent, scores, action_type, algorithm_name="Algorithm
         variance_episodes = range(10, len(agent.return_variance_history) + 10)
         ax3.plot(variance_episodes, agent.return_variance_history, color='green', alpha=0.7)
         
-        # Handle moving average for variance history
-        if len(agent.return_variance_history) >= 20:
-            smoothed, x_offset = get_moving_average(agent.return_variance_history, window=20)
+        # Use config window size for smoothing
+        if len(agent.return_variance_history) >= config["scores_window_size"]:
+            smoothed, x_offset = get_moving_average(agent.return_variance_history, window=config["scores_window_size"])
             smoothed_episodes = range(10 + x_offset, 10 + x_offset + len(smoothed))
             ax3.plot(smoothed_episodes, smoothed, 
-                     color='darkgreen', linewidth=2, label='Smoothed (20ep)')
+                     color='darkgreen', linewidth=2, label=f'Smoothed ({config["scores_window_size"]}ep)')
     ax3.set_xlabel('Episode')
     ax3.set_ylabel('Return Variance (last 10 episodes)')
     ax3.set_title('Rolling Return Variance')
@@ -136,11 +137,12 @@ def plot_comparison(discrete_results, continuous_results, config, algorithm_name
     discrete_scores, discrete_agent = discrete_results
     continuous_scores, continuous_agent = continuous_results
 
-    # Performance comparison
-    discrete_final_avg = np.mean(discrete_scores[-20:]) if len(discrete_scores) >= 20 else np.mean(discrete_scores)
-    continuous_final_avg = np.mean(continuous_scores[-20:]) if len(continuous_scores) >= 20 else np.mean(continuous_scores)
+    # Performance comparison - use config window size
+    window_size = min(config["scores_window_size"], 20)  # Use smaller window for final comparison
+    discrete_final_avg = np.mean(discrete_scores[-window_size:]) if len(discrete_scores) >= window_size else np.mean(discrete_scores)
+    continuous_final_avg = np.mean(continuous_scores[-window_size:]) if len(continuous_scores) >= window_size else np.mean(continuous_scores)
 
-    print(f"\nFinal Performance (last 20 episodes average):")
+    print(f"\nFinal Performance (last {window_size} episodes average):")
     print(f"Discrete:   {discrete_final_avg:.2f}")
     print(f"Continuous: {continuous_final_avg:.2f}")
 
@@ -156,39 +158,41 @@ def plot_comparison(discrete_results, continuous_results, config, algorithm_name
     # Combined visualization
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
-    # Score comparison with proper moving averages
-    if len(discrete_scores) >= 20:
-        discrete_smoothed, discrete_offset = get_moving_average(discrete_scores, window=20)
+    # Score comparison with proper moving averages - use config window size
+    smoothing_window = config["scores_window_size"]
+    if len(discrete_scores) >= smoothing_window:
+        discrete_smoothed, discrete_offset = get_moving_average(discrete_scores, window=smoothing_window)
         discrete_episodes = range(discrete_offset + 1, discrete_offset + 1 + len(discrete_smoothed))
         ax1.plot(discrete_episodes, discrete_smoothed, label='Discrete', color='blue', linewidth=2)
     
-    if len(continuous_scores) >= 20:
-        continuous_smoothed, continuous_offset = get_moving_average(continuous_scores, window=20)
+    if len(continuous_scores) >= smoothing_window:
+        continuous_smoothed, continuous_offset = get_moving_average(continuous_scores, window=smoothing_window)
         continuous_episodes = range(continuous_offset + 1, continuous_offset + 1 + len(continuous_smoothed))
         ax1.plot(continuous_episodes, continuous_smoothed, label='Continuous', color='red', linewidth=2)
     
-    # LunarLander target score
-    ax1.axhline(y=200, color='g', linestyle='--', label='Target (200)', alpha=0.7)
+    # Use configurable target score
+    ax1.axhline(y=config["target_score"], color='g', linestyle='--', 
+                label=f'Target ({config["target_score"]})', alpha=0.7)
     
     ax1.set_xlabel('Episode')
-    ax1.set_ylabel('Score (20-episode moving average)')
+    ax1.set_ylabel(f'Score ({smoothing_window}-episode moving average)')
     ax1.set_title(f'{algorithm_name} Performance Comparison on {config["env_id"]}')
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
-    # Gradient norm comparison with proper moving averages
-    if len(discrete_agent.gradient_norms) >= 20:
-        discrete_grad_smoothed, discrete_grad_offset = get_moving_average(discrete_agent.gradient_norms, window=20)
+    # Gradient norm comparison with proper moving averages - use config window size
+    if len(discrete_agent.gradient_norms) >= smoothing_window:
+        discrete_grad_smoothed, discrete_grad_offset = get_moving_average(discrete_agent.gradient_norms, window=smoothing_window)
         discrete_grad_episodes = range(discrete_grad_offset + 1, discrete_grad_offset + 1 + len(discrete_grad_smoothed))
         ax2.plot(discrete_grad_episodes, discrete_grad_smoothed, label='Discrete', color='blue', linewidth=2)
     
-    if len(continuous_agent.gradient_norms) >= 20:
-        continuous_grad_smoothed, continuous_grad_offset = get_moving_average(continuous_agent.gradient_norms, window=20)
+    if len(continuous_agent.gradient_norms) >= smoothing_window:
+        continuous_grad_smoothed, continuous_grad_offset = get_moving_average(continuous_agent.gradient_norms, window=smoothing_window)
         continuous_grad_episodes = range(continuous_grad_offset + 1, continuous_grad_offset + 1 + len(continuous_grad_smoothed))
         ax2.plot(continuous_grad_episodes, continuous_grad_smoothed, label='Continuous', color='red', linewidth=2)
     
     ax2.set_xlabel('Episode')
-    ax2.set_ylabel('Gradient Norm (20-episode moving average)')
+    ax2.set_ylabel(f'Gradient Norm ({smoothing_window}-episode moving average)')
     ax2.set_title('Gradient Stability Comparison')
     ax2.legend()
     ax2.grid(True, alpha=0.3)
