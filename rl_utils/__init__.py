@@ -12,7 +12,7 @@ This package separates infrastructure code from algorithm-specific learning cont
 
 __version__ = "1.0.0"
 
-from .config import create_base_config, set_seeds
+from .config import set_seeds
 from .environment import (cleanup_videos, create_env_with_wrappers,
                           display_latest_video, preprocess_state)
 from .networks import PolicyNetwork
@@ -28,6 +28,5 @@ __all__ = [
     "plot_variance_analysis",
     "get_moving_average",
     "PolicyNetwork",
-    "create_base_config",
     "set_seeds"
 ]

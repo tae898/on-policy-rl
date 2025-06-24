@@ -6,30 +6,39 @@ RL paradigms using **LunarLander-v3** for consistent comparison across all algor
 
 ## 🚀 Our Learning Environment: LunarLander-v3
 
-For this entire learning series, we use **LunarLander-v3** exclusively. This environment is perfect for RL education because it offers both discrete and continuous action spaces, rich vector observations, and clear success/failure conditions.
+For this entire learning series, we use **LunarLander-v3** exclusively. This environment
+is perfect for RL education because it offers both discrete and continuous action
+spaces, rich vector observations, and clear success/failure conditions.
 
-**Reference**: [Gymnasium Lunar Lander](https://gymnasium.farama.org/environments/box2d/lunar_lander/)
+**Reference**: [Gymnasium Lunar
+Lander](https://gymnasium.farama.org/environments/box2d/lunar_lander/)
 
 ### LunarLander-v3 🚀
 
-Classic rocket trajectory optimization - land the lunar module safely on the landing pad.
+Classic rocket trajectory optimization - land the lunar module safely on the landing
+pad.
 
-**Observation**: `Box((8,), float32)` - Position, velocity, angle, angular velocity, leg ground contact
-**Action Spaces**:
+**Observation**: `Box((8,), float32)` - Position, velocity, angle, angular velocity, leg
+ground contact **Action Spaces**:
 
 - **Discrete**: 4 actions [do_nothing, fire_left, fire_main, fire_right]
-- **Continuous**: `Box(-1, +1, (2,), float32)` - [main_engine_throttle, lateral_booster_throttle]
+- **Continuous**: `Box(-1, +1, (2,), float32)` - [main_engine_throttle,
+  lateral_booster_throttle]
 
-**Rewards**: Distance/speed penalties, angle penalties, +10 per leg contact, engine costs, ±100 for crash/landing
+**Rewards**: Distance/speed penalties, angle penalties, +10 per leg contact, engine
+costs, ±100 for crash/landing
 
 ### Why LunarLander-v3 for RL Education?
 
-- **Dual Action Spaces**: Perfect for testing both discrete and continuous control algorithms
-- **Vector Observations**: Rich, interpretable 8D state representation with physics-based features
+- **Dual Action Spaces**: Perfect for testing both discrete and continuous control
+  algorithms
+- **Vector Observations**: Rich, interpretable 8D state representation with
+  physics-based features
 - **Realistic Physics**: Box2D physics engine provides consistent, realistic dynamics
 - **Clear Success Criteria**: Landing successfully gives +100, crashing gives -100
 - **Fast Feedback**: Episodes are relatively short, enabling rapid experimentation
-- **Educational Value**: Classic trajectory optimization problem that teaches fundamental RL concepts
+- **Educational Value**: Classic trajectory optimization problem that teaches
+  fundamental RL concepts
 - **No Visual Complexity**: Vector observations allow us to use simple MLPs
 
 ## 📚 Notebook Series
@@ -53,7 +62,8 @@ Classic rocket trajectory optimization - land the lunar module safely on the lan
 
 - **Focus**: Comprehensive DQN improvements, state-of-the-art value methods
 - **Action Space**: Discrete only
-- **Key Concepts**: Double DQN, Dueling networks, Prioritized replay, Noisy networks, Distributional RL, Multi-step learning
+- **Key Concepts**: Double DQN, Dueling networks, Prioritized replay, Noisy networks,
+  Distributional RL, Multi-step learning
 
 ### 04. Vanilla Actor-Critic (Bridge Methods)
 
@@ -64,14 +74,24 @@ Classic rocket trajectory optimization - land the lunar module safely on the lan
   - On-policy discrete (V-function critic)
   - Off-policy continuous (Q-function critic)
 
-### 05. DDPG (Deep Deterministic Policy Gradients)
+### 05. A3C (Asynchronous Advantage Actor-Critic)
+
+- **Focus**: Parallel learning, distributed training, stabilizing on-policy methods
+- **Action Space**: Both discrete AND continuous
+- **Key Concepts**: Asynchronous updates, shared parameters, advantage estimation,
+  parallel experience collection
+- **Key Innovation**: Multiple workers collecting experience in parallel, reducing
+  correlation in training data
+
+### 06. DDPG (Deep Deterministic Policy Gradients)
 
 - **Focus**: Foundation of off-policy continuous control
 - **Action Space**: Continuous only
-- **Key Concepts**: Deterministic policy gradients, actor-critic for continuous actions, exploration noise
+- **Key Concepts**: Deterministic policy gradients, actor-critic for continuous actions,
+  exploration noise
 - **Key Issues**: Overestimation bias, instability, poor exploration
 
-### 06. TD3 (Twin Delayed Deep Deterministic Policy Gradients)
+### 07. TD3 (Twin Delayed Deep Deterministic Policy Gradients)
 
 - **Focus**: Systematic debugging and improvement of DDPG
 - **Action Space**: Continuous only
@@ -79,18 +99,13 @@ Classic rocket trajectory optimization - land the lunar module safely on the lan
 - **Educational Focus**: How to identify and fix specific RL problems
 - **Meta-Skills**: Algorithm debugging methodology, ablation studies
 
-### 07. SAC (Soft Actor-Critic)
+### 08. SAC (Soft Actor-Critic)
 
 - **Focus**: Maximum entropy reinforcement learning
 - **Action Space**: Continuous only
-- **Key Concepts**: Maximum entropy framework, automatic exploration tuning, temperature parameter
+- **Key Concepts**: Maximum entropy framework, automatic exploration tuning, temperature
+  parameter
 - **Focus**: Principled approach to exploration and robustness
-
-### 08. Continuous Control Comparison
-
-- **Focus**: Algorithm comparison, selection criteria, and performance analysis
-- **Action Space**: Continuous only
-- **Key Concepts**: When to use DDPG vs TD3 vs SAC, performance benchmarks, practical considerations
 
 ### 09. PPO (Proximal Policy Optimization)
 
@@ -111,6 +126,7 @@ By completing this series, you will understand:
 - **Temporal Difference Learning**: DQN, Actor-Critic with bootstrapping
 - **On-Policy vs Off-Policy**: Data usage patterns and sample efficiency tradeoffs
 - **Value-Based vs Policy-Based**: When to learn Q(s,a) vs π(a|s) directly
+- **Parallel Training**: A3C's asynchronous workers and distributed learning
 
 ### Algorithm Development Skills
 
@@ -119,6 +135,7 @@ By completing this series, you will understand:
 - **Algorithm Evolution**: Understanding how research progresses incrementally
 - **Performance Analysis**: Comparing algorithms fairly across environments
 - **Implementation Trade-offs**: Complexity vs performance vs stability
+- **Parallel Training**: Asynchronous learning and distributed experience collection
 
 ### Practical Implementation
 
@@ -135,6 +152,7 @@ By completing this series, you will understand:
 | Vanilla DQN  | Off-Policy | Replay Buffer | Discrete Only   | Deep Q-learning                |
 | Rainbow DQN  | Off-Policy | Replay Buffer | Discrete Only   | Comprehensive DQN improvements |
 | Actor-Critic | Both       | Both          | Both            | Value + Policy combination     |
+| A3C          | On-Policy  | Fresh Only    | Both            | Asynchronous parallel learning |
 | DDPG         | Off-Policy | Replay Buffer | Continuous Only | Continuous control foundation  |
 | TD3          | Off-Policy | Replay Buffer | Continuous Only | Systematic debugging           |
 | SAC          | Off-Policy | Replay Buffer | Continuous Only | Maximum entropy                |
@@ -144,17 +162,17 @@ By completing this series, you will understand:
 
 ### Package Structure
 
-```
+```bash
 rl/
 ├── README.md                      # This documentation
 ├── 01.reinforce.ipynb            # REINFORCE algorithm notebook
 ├── 02.dqn.ipynb                  # Vanilla DQN algorithm notebook
 ├── 03.rainbow-dqn.ipynb          # Rainbow DQN algorithm notebook
 ├── 04.actor-critic.ipynb         # Actor-Critic algorithm notebook
-├── 05.ddpg.ipynb                 # DDPG algorithm notebook
-├── 06.td3.ipynb                  # TD3 algorithm notebook
-├── 07.sac.ipynb                  # SAC algorithm notebook
-├── 08.continuous-comparison.ipynb # Continuous control algorithm comparison
+├── 05.a3c.ipynb                  # A3C algorithm notebook
+├── 06.ddpg.ipynb                 # DDPG algorithm notebook
+├── 07.td3.ipynb                  # TD3 algorithm notebook
+├── 08.sac.ipynb                  # SAC algorithm notebook
 ├── 09.ppo.ipynb                  # PPO algorithm notebook
 ├── rl_utils/                      # Shared utility package
 │   ├── __init__.py               # Package initialization
@@ -167,7 +185,8 @@ rl/
 
 ### RL Utils Package
 
-To keep notebooks focused on algorithm learning, we've extracted common infrastructure into the `rl_utils` package:
+To keep notebooks focused on algorithm learning, we've extracted common infrastructure
+into the `rl_utils` package:
 
 **Environment utilities** (`rl_utils.environment`):
 
@@ -177,7 +196,8 @@ To keep notebooks focused on algorithm learning, we've extracted common infrastr
 
 **Neural networks** (`rl_utils.networks`):
 
-- `PolicyNetwork`: Flexible policy network supporting both discrete and continuous actions
+- `PolicyNetwork`: Flexible policy network supporting both discrete and continuous
+  actions
 - Automatic parameter counting and network information printing
 - Built-in action clipping for continuous control
 
@@ -190,7 +210,6 @@ To keep notebooks focused on algorithm learning, we've extracted common infrastr
 
 **Configuration** (`rl_utils.config`):
 
-- `create_base_config()`: Consistent configuration across notebooks
 - `set_seeds()`: Reproducible random seeding
 
 ### Notebook Organization
@@ -251,7 +270,7 @@ This separation allows:
 sudo apt install swig build-essential python3-dev
 
 # Python packages
-pip install 'gymnasium[box2d]>=1.0' torch torchvision matplotlib numpy jupyter pprint tqdm
+pip install 'gymnasium[box2d]>=1.0' torch torchvision matplotlib numpy jupyter tqdm
 
 # Clone the repository
 git clone <repository-url>
@@ -266,3 +285,15 @@ cd rl
 cd rl/
 jupyter notebook
 ```
+
+## 📚 References
+
+- [Simple statistical gradient-following algorithms for connectionist reinforcement learning](https://link.springer.com/article/10.1007/BF00992696)
+- [Human-level Control through Deep Reinforcement Learning](https://www.nature.com/articles/nature14236)
+- [Rainbow: Combining Improvements in Deep Reinforcement Learning](https://arxiv.org/abs/1710.02298)
+- [Actor-Critic Reinforcement Learning for Control with Stability Guarantees](https://arxiv.org/abs/2004.14288)
+- [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783)
+- [Continuous Control with Deep Reinforcement Learning](https://arxiv.org/abs/1509.02971)
+- [Addressing Function Approximation Error in Actor-Critic Methods](https://arxiv.org/abs/1802.09477)
+- [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor](https://arxiv.org/abs/1801.01290)
+- [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
