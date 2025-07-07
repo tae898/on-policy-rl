@@ -1,25 +1,12 @@
 import glob
 import os
 import shutil
-import time
 
 import gymnasium as gym
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from gymnasium.wrappers import RecordEpisodeStatistics, RecordVideo
 from IPython.display import HTML, clear_output, display
-
-
-def preprocess_state(state):
-    """
-    Preprocess state for LunarLander (vector environment).
-
-    Args:
-        state: Raw environment observation (8D vector)
-    """
-    state_normalized = np.array(state, dtype=np.float32)
-    return torch.from_numpy(state_normalized).float()
 
 
 def cleanup_videos(video_folder, video_prefix=None):
@@ -84,11 +71,15 @@ def create_env_with_wrappers(
         # Ensure video folder exists
         os.makedirs(config["video_folder"], exist_ok=True)
 
+        # Get video recording interval from config
+        video_record_interval = config.get("video_record_interval")
+
         # Custom episode trigger that uses actual episode numbers
         def episode_trigger(episode_id):
             # episode_id starts from 0, so we add 1 to match our episode numbering
             actual_episode = episode_id + 1
-            return actual_episode % config["video_record_interval"] == 0
+            
+            return actual_episode % video_record_interval == 0
 
         env = RecordVideo(
             env,

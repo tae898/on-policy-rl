@@ -29,15 +29,15 @@ def plot_training_scores(scores, config, action_type, algorithm_name="Algorithm"
     )
 
     # Handle moving average properly
-    if len(scores) >= config["scores_window_size"]:
+    if len(scores) >= config["window_length"]:
         smoothed, x_offset = get_moving_average(
-            scores, window=config["scores_window_size"]
+            scores, window=config["window_length"]
         )
         smoothed_episodes = range(x_offset + 1, x_offset + 1 + len(smoothed))
         ax.plot(
             smoothed_episodes,
             smoothed,
-            label=f'Smoothed Score ({config["scores_window_size"]}ep)',
+            label=f'Smoothed Score ({config["window_length"]}ep)',
             color="blue" if action_type == "Discrete" else "red",
             linewidth=2,
         )
@@ -109,16 +109,16 @@ def plot_training_losses(losses_dict, config, action_type, algorithm_name="Algor
         ax.plot(x_plot, y_plot, label=f'{label} (Raw)', color=color, alpha=0.3)
 
         # Add moving average if enough data
-        if len(y_plot) >= config["scores_window_size"]:
-            smoothed, _ = get_moving_average(y_plot, window=config["scores_window_size"])
+        if len(y_plot) >= config["window_length"]:
+            smoothed, _ = get_moving_average(y_plot, window=config["window_length"])
             # Calculate corresponding x values for smoothed data
-            smoothed_x = x_plot[config["scores_window_size"]-1:][:len(smoothed)]
+            smoothed_x = x_plot[config["window_length"]-1:][:len(smoothed)]
             ax.plot(
                 smoothed_x,
                 smoothed,
                 color=color,
                 linewidth=2,
-                label=f'{label} ({config["scores_window_size"]}pt avg)',
+                label=f'{label} ({config["window_length"]}pt avg)',
             )
 
     ax.set_ylabel("Loss Value")
@@ -199,15 +199,15 @@ def plot_variance_analysis(
         ax2.plot(x_values, agent.gradient_norms, alpha=0.6, color="purple")
 
         # Use config window size for smoothing
-        if len(agent.gradient_norms) >= config["scores_window_size"]:
-            smoothed, _ = get_moving_average(agent.gradient_norms, window=config["scores_window_size"])
-            smoothed_x = x_values[config["scores_window_size"]-1:][:len(smoothed)]
+        if len(agent.gradient_norms) >= config["window_length"]:
+            smoothed, _ = get_moving_average(agent.gradient_norms, window=config["window_length"])
+            smoothed_x = x_values[config["window_length"]-1:][:len(smoothed)]
             ax2.plot(
                 smoothed_x,
                 smoothed,
                 color="darkviolet",
                 linewidth=2,
-                label=f'Smoothed ({config["scores_window_size"]}pt)',
+                label=f'Smoothed ({config["window_length"]}pt)',
             )
     else:
         x_label = "Update Step"
@@ -220,26 +220,29 @@ def plot_variance_analysis(
 
     # 3. Return Variance Over Time (still uses episodes)
     if len(agent.return_variance_history) > 0:
-        variance_episodes = range(10, len(agent.return_variance_history) + 10)
+        # Use config window_length instead of hardcoded 10
+        variance_start_episode = config["window_length"]
+        variance_episodes = range(variance_start_episode, len(agent.return_variance_history) + variance_start_episode)
         ax3.plot(
             variance_episodes, agent.return_variance_history, color="green", alpha=0.7
         )
 
         # Use config window size for smoothing
-        if len(agent.return_variance_history) >= config["scores_window_size"]:
+        if len(agent.return_variance_history) >= config["window_length"]:
             smoothed, _ = get_moving_average(
-                agent.return_variance_history, window=config["scores_window_size"]
+                agent.return_variance_history, window=config["window_length"]
             )
-            smoothed_episodes = range(10 + config["scores_window_size"] - 1, 10 + config["scores_window_size"] - 1 + len(smoothed))
+            smoothed_episodes = range(variance_start_episode + config["window_length"] - 1, 
+                                    variance_start_episode + config["window_length"] - 1 + len(smoothed))
             ax3.plot(
                 smoothed_episodes,
                 smoothed,
                 color="darkgreen",
                 linewidth=2,
-                label=f'Smoothed ({config["scores_window_size"]}ep)',
+                label=f'Smoothed ({config["window_length"]}ep)',
             )
     ax3.set_xlabel("Episode")
-    ax3.set_ylabel("Return Variance (last 10 episodes)")
+    ax3.set_ylabel(f"Return Variance (last {config['window_length']} episodes)")
     ax3.set_title("Rolling Return Variance")
     ax3.legend()
     ax3.grid(True, alpha=0.3)
@@ -292,7 +295,7 @@ def plot_comparison(
 
     # Performance comparison - use config window size
     window_size = min(
-        config["scores_window_size"], 20
+        config["window_length"], 20
     )  # Use smaller window for final comparison
     discrete_final_avg = (
         np.mean(discrete_scores[-window_size:])
@@ -326,7 +329,7 @@ def plot_comparison(
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     # Score comparison with proper moving averages - use config window size
-    smoothing_window = config["scores_window_size"]
+    smoothing_window = config["window_length"]
     if len(discrete_scores) >= smoothing_window:
         discrete_smoothed, discrete_offset = get_moving_average(
             discrete_scores, window=smoothing_window
