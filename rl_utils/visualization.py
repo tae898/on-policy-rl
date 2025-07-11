@@ -283,9 +283,9 @@ def plot_variance_analysis(
         f"Gradient Norms: μ={stats['gradient_norm_mean']:.4f}, σ={stats['gradient_norm_std']:.4f}"
     )
     print(f"Recent Return Variance: {stats['recent_return_variance']:.2f}")
-    print(
-        f"Coefficient of Variation (Returns): {stats['return_std']/abs(stats['return_mean']):.2f}"
-    )
+    # print(
+    #     f"Coefficient of Variation (Returns): {stats['return_std']/abs(stats['return_mean']):.2f}"
+    # )
     if hasattr(agent, 'update_step'):
         print(f"Total Update Steps: {agent.update_step}")
 
@@ -298,9 +298,7 @@ def plot_comparison(
     continuous_scores, continuous_agent = continuous_results
 
     # Performance comparison - use config window size
-    window_size = min(
-        config["window_length"], 20
-    )  # Use smaller window for final comparison
+    window_size = config["window_length"]
     discrete_final_avg = (
         np.mean(discrete_scores[-window_size:])
         if len(discrete_scores) >= window_size
@@ -614,9 +612,9 @@ def plot_ppo_variance_analysis(agent, scores, action_type, config, algorithm_nam
         f"Gradient Norms: μ={stats['gradient_norm_mean']:.4f}, σ={stats['gradient_norm_std']:.4f}"
     )
     print(f"Recent Return Variance: {stats['recent_return_variance']:.2f}")
-    print(
-        f"Coefficient of Variation (Returns): {stats['return_std']/abs(stats['return_mean']):.2f}"
-    )
+    # print(
+    #     f"Coefficient of Variation (Returns): {stats['return_std']/abs(stats['return_mean']):.2f}"
+    # )
     if hasattr(agent, 'rollout_count'):
         print(f"Total Rollouts: {agent.rollout_count}")
     if hasattr(agent, 'policy_updates'):
