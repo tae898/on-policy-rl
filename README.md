@@ -1,5 +1,7 @@
 # On-Policy Reinforcement Learning: From Policy Gradients to PPO
 
+[![DOI](https://zenodo.org/badge/1002873241.svg)](https://doi.org/10.5281/zenodo.15869035)
+
 A comprehensive educational series of Jupyter notebooks teaching **on-policy reinforcement learning**
 algorithms from fundamentals to state-of-the-art. Each notebook demonstrates the progressive evolution
 of policy gradient methods using **LunarLander-v3** for consistent comparison across all algorithms.
