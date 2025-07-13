@@ -160,7 +160,7 @@ def plot_variance_analysis(
 ):
     """
     Visualize variance and training stability metrics.
-    Generic function that works with any algorithm that tracks gradient norms and episode returns.
+    Generic function that works with any algorithm that tracks gradient norms and episode scores.
     """
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
     fig.suptitle(
@@ -169,25 +169,26 @@ def plot_variance_analysis(
 
     episodes = range(1, len(scores) + 1)
 
-    # 1. Episode Returns Distribution
+    # 1. Episode Scores Distribution (use episode_scores, not episode_returns)
+    episode_data = getattr(agent, 'episode_scores', scores)  # Fallback to scores if no episode_scores
     ax1.hist(
-        agent.episode_returns, bins=30, alpha=0.7, color="skyblue", edgecolor="black"
+        episode_data, bins=30, alpha=0.7, color="skyblue", edgecolor="black"
     )
     ax1.axvline(
-        np.mean(agent.episode_returns),
+        np.mean(episode_data),
         color="red",
         linestyle="--",
-        label=f"Mean: {np.mean(agent.episode_returns):.1f}",
+        label=f"Mean: {np.mean(episode_data):.1f}",
     )
     ax1.axvline(
-        np.median(agent.episode_returns),
+        np.median(episode_data),
         color="orange",
         linestyle="--",
-        label=f"Median: {np.median(agent.episode_returns):.1f}",
+        label=f"Median: {np.median(episode_data):.1f}",
     )
-    ax1.set_xlabel("Episode Return")
+    ax1.set_xlabel("Episode Score")
     ax1.set_ylabel("Frequency")
-    ax1.set_title("Distribution of Episode Returns")
+    ax1.set_title("Distribution of Episode Scores")
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
@@ -219,22 +220,24 @@ def plot_variance_analysis(
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
-    # 3. Return Variance Over Time
-    if len(agent.return_variance_history) > 0:
+    # 3. Score Variance Over Time (updated terminology)
+    variance_attr = getattr(agent, 'score_variance_history', getattr(agent, 'return_variance_history', []))
+    variance_label = "Score Variance" if hasattr(agent, 'score_variance_history') else "Variance"
+    
+    if len(variance_attr) > 0:
         # Raw variance data starts at episode window_length
         variance_start_episode = config["window_length"]
-        variance_episodes = range(variance_start_episode, variance_start_episode + len(agent.return_variance_history))
+        variance_episodes = range(variance_start_episode, variance_start_episode + len(variance_attr))
         
         ax3.plot(
-            variance_episodes, agent.return_variance_history, color="green", alpha=0.7, label="Raw Variance"
+            variance_episodes, variance_attr, color="green", alpha=0.7, label=f"Raw {variance_label}"
         )
 
         # Smoothed variance with correct offset calculation
-        if len(agent.return_variance_history) >= config["window_length"]:
+        if len(variance_attr) >= config["window_length"]:
             smoothed, smoothing_offset = get_moving_average(
-                agent.return_variance_history, window=config["window_length"]
+                variance_attr, window=config["window_length"]
             )
-            # FIXED: Smoothed variance episodes start at variance_start + smoothing_offset
             smoothed_start_episode = variance_start_episode + smoothing_offset
             smoothed_episodes = range(smoothed_start_episode, smoothed_start_episode + len(smoothed))
             ax3.plot(
@@ -246,46 +249,54 @@ def plot_variance_analysis(
             )
     
     ax3.set_xlabel("Episode")
-    ax3.set_ylabel(f"Return Variance (last {config['window_length']} episodes)")
-    ax3.set_title("Rolling Return Variance")
+    ax3.set_ylabel(f"{variance_label} (last {config['window_length']} episodes)")
+    ax3.set_title(f"Rolling {variance_label}")
     ax3.legend()
     ax3.grid(True, alpha=0.3)
 
-    # 4. Gradient vs Return Correlation
-    if len(agent.gradient_norms) > 0 and len(agent.episode_returns) > 0:
-        min_len = min(len(agent.gradient_norms), len(agent.episode_returns))
+    # 4. Gradient vs Score Correlation (updated terminology)
+    if len(agent.gradient_norms) > 0 and len(episode_data) > 0:
+        min_len = min(len(agent.gradient_norms), len(episode_data))
         grad_subset = agent.gradient_norms[:min_len]
-        return_subset = agent.episode_returns[:min_len]
+        score_subset = episode_data[:min_len]
 
-        ax4.scatter(return_subset, grad_subset, alpha=0.6, color="coral")
+        ax4.scatter(score_subset, grad_subset, alpha=0.6, color="coral")
 
         # Calculate correlation
         if len(grad_subset) > 1:
-            correlation = np.corrcoef(return_subset, grad_subset)[0, 1]
+            correlation = np.corrcoef(score_subset, grad_subset)[0, 1]
             ax4.set_title(
-                f"Gradient Norm vs Episode Return\nCorrelation: {correlation:.3f}"
+                f"Gradient Norm vs Episode Score\nCorrelation: {correlation:.3f}"
             )
         else:
-            ax4.set_title("Gradient Norm vs Episode Return\n(Insufficient data)")
+            ax4.set_title("Gradient Norm vs Episode Score\n(Insufficient data)")
 
-    ax4.set_xlabel("Episode Return")
+    ax4.set_xlabel("Episode Score")
     ax4.set_ylabel("Gradient Norm")
     ax4.grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.show()
 
-    # Print basic statistics without algorithm-specific commentary
+    # Print basic statistics with corrected terminology
     stats = agent.get_variance_stats()
     print(f"\n--- {algorithm_name} Training Statistics ({action_type}) ---")
-    print(f"Episode Returns: μ={stats['return_mean']:.2f}, σ={stats['return_std']:.2f}")
+    
+    # Print both score and return stats for MC methods, only scores for TD/PPO
+    if hasattr(agent, 'episode_returns') and len(getattr(agent, 'episode_returns', [])) > 0:
+        # MC methods: show both scores and returns
+        print(f"Episode Scores: μ={stats['score_mean']:.2f}, σ={stats['score_std']:.2f}")
+        print(f"Episode Returns (G_0): μ={stats['return_mean']:.2f}, σ={stats['return_std']:.2f}")
+        print(f"Recent Score Variance: {stats.get('recent_score_variance', 0.0):.2f}")
+        print(f"Recent Return Variance: {stats.get('recent_return_variance', 0.0):.2f}")
+    else:
+        # TD/PPO methods: only scores available
+        print(f"Episode Scores: μ={stats.get('score_mean', stats.get('return_mean', 0.0)):.2f}, σ={stats.get('score_std', stats.get('return_std', 0.0)):.2f}")
+        print(f"Recent Score Variance: {stats.get('recent_score_variance', stats.get('recent_return_variance', 0.0)):.2f}")
+    
     print(
         f"Gradient Norms: μ={stats['gradient_norm_mean']:.4f}, σ={stats['gradient_norm_std']:.4f}"
     )
-    print(f"Recent Return Variance: {stats['recent_return_variance']:.2f}")
-    # print(
-    #     f"Coefficient of Variation (Returns): {stats['return_std']/abs(stats['return_mean']):.2f}"
-    # )
     if hasattr(agent, 'update_step'):
         print(f"Total Update Steps: {agent.update_step}")
 
@@ -490,7 +501,7 @@ def plot_ppo_training_losses(losses_dict, config, action_type, algorithm_name="P
 
 def plot_ppo_variance_analysis(agent, scores, action_type, config, algorithm_name="PPO"):
     """
-    PPO-specific variance analysis with correct x-axis labels.
+    PPO-specific variance analysis with correct x-axis labels and terminology.
     """
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
     fig.suptitle(
@@ -499,25 +510,26 @@ def plot_ppo_variance_analysis(agent, scores, action_type, config, algorithm_nam
 
     episodes = range(1, len(scores) + 1)
 
-    # 1. Episode Returns Distribution
+    # 1. Episode Scores Distribution (corrected terminology)
+    episode_data = getattr(agent, 'episode_scores', scores)
     ax1.hist(
-        agent.episode_returns, bins=30, alpha=0.7, color="skyblue", edgecolor="black"
+        episode_data, bins=30, alpha=0.7, color="skyblue", edgecolor="black"
     )
     ax1.axvline(
-        np.mean(agent.episode_returns),
+        np.mean(episode_data),
         color="red",
         linestyle="--",
-        label=f"Mean: {np.mean(agent.episode_returns):.1f}",
+        label=f"Mean: {np.mean(episode_data):.1f}",
     )
     ax1.axvline(
-        np.median(agent.episode_returns),
+        np.median(episode_data),
         color="orange",
         linestyle="--",
-        label=f"Median: {np.median(agent.episode_returns):.1f}",
+        label=f"Median: {np.median(episode_data):.1f}",
     )
-    ax1.set_xlabel("Episode Return")
+    ax1.set_xlabel("Episode Score")
     ax1.set_ylabel("Frequency")
-    ax1.set_title("Distribution of Episode Returns")
+    ax1.set_title("Distribution of Episode Scores")
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
@@ -549,20 +561,20 @@ def plot_ppo_variance_analysis(agent, scores, action_type, config, algorithm_nam
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
-    # 3. Return Variance Over Time - PPO uses rollouts
-    if len(agent.return_variance_history) > 0:
-        # For PPO, return variance is calculated per rollout, not per episode
-        # So x-axis should be rollouts where we have enough episode data
-        variance_rollouts = range(1, len(agent.return_variance_history) + 1)
+    # 3. Score Variance Over Time (corrected terminology)
+    variance_attr = getattr(agent, 'score_variance_history', [])
+    if len(variance_attr) > 0:
+        # For PPO, score variance is calculated per rollout, not per episode
+        variance_rollouts = range(1, len(variance_attr) + 1)
         
         ax3.plot(
-            variance_rollouts, agent.return_variance_history, color="green", alpha=0.7, label="Raw Variance"
+            variance_rollouts, variance_attr, color="green", alpha=0.7, label="Raw Score Variance"
         )
 
         # Smoothed variance
-        if len(agent.return_variance_history) >= config["window_length"]:
+        if len(variance_attr) >= config["window_length"]:
             smoothed, smoothing_offset = get_moving_average(
-                agent.return_variance_history, window=config["window_length"]
+                variance_attr, window=config["window_length"]
             )
             smoothed_start_rollout = smoothing_offset + 1
             smoothed_rollouts = range(smoothed_start_rollout, smoothed_start_rollout + len(smoothed))
@@ -575,46 +587,43 @@ def plot_ppo_variance_analysis(agent, scores, action_type, config, algorithm_nam
             )
     
     ax3.set_xlabel("Rollout")
-    ax3.set_ylabel(f"Return Variance (last {config['window_length']} episodes)")
-    ax3.set_title("Rolling Return Variance")
+    ax3.set_ylabel(f"Score Variance (last {config['window_length']} episodes)")
+    ax3.set_title("Rolling Score Variance")
     ax3.legend()
     ax3.grid(True, alpha=0.3)
 
-    # 4. Gradient vs Return Correlation
-    if len(agent.gradient_norms) > 0 and len(agent.episode_returns) > 0:
-        min_len = min(len(agent.gradient_norms), len(agent.episode_returns))
+    # 4. Gradient vs Score Correlation (corrected terminology)
+    if len(agent.gradient_norms) > 0 and len(episode_data) > 0:
+        min_len = min(len(agent.gradient_norms), len(episode_data))
         grad_subset = agent.gradient_norms[:min_len]
-        return_subset = agent.episode_returns[:min_len]
+        score_subset = episode_data[:min_len]
 
-        ax4.scatter(return_subset, grad_subset, alpha=0.6, color="coral")
+        ax4.scatter(score_subset, grad_subset, alpha=0.6, color="coral")
 
         # Calculate correlation
         if len(grad_subset) > 1:
-            correlation = np.corrcoef(return_subset, grad_subset)[0, 1]
+            correlation = np.corrcoef(score_subset, grad_subset)[0, 1]
             ax4.set_title(
-                f"Gradient Norm vs Episode Return\nCorrelation: {correlation:.3f}"
+                f"Gradient Norm vs Episode Score\nCorrelation: {correlation:.3f}"
             )
         else:
-            ax4.set_title("Gradient Norm vs Episode Return\n(Insufficient data)")
+            ax4.set_title("Gradient Norm vs Episode Score\n(Insufficient data)")
 
-    ax4.set_xlabel("Episode Return")
+    ax4.set_xlabel("Episode Score")
     ax4.set_ylabel("Gradient Norm")
     ax4.grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.show()
 
-    # Print statistics
+    # Print statistics with corrected terminology
     stats = agent.get_variance_stats()
     print(f"\n--- {algorithm_name} Training Statistics ({action_type}) ---")
-    print(f"Episode Returns: μ={stats['return_mean']:.2f}, σ={stats['return_std']:.2f}")
+    print(f"Episode Scores: μ={stats.get('score_mean', stats.get('return_mean', 0.0)):.2f}, σ={stats.get('score_std', stats.get('return_std', 0.0)):.2f}")
     print(
         f"Gradient Norms: μ={stats['gradient_norm_mean']:.4f}, σ={stats['gradient_norm_std']:.4f}"
     )
-    print(f"Recent Return Variance: {stats['recent_return_variance']:.2f}")
-    # print(
-    #     f"Coefficient of Variation (Returns): {stats['return_std']/abs(stats['return_mean']):.2f}"
-    # )
+    print(f"Recent Score Variance: {stats.get('recent_score_variance', stats.get('recent_return_variance', 0.0)):.2f}")
     if hasattr(agent, 'rollout_count'):
         print(f"Total Rollouts: {agent.rollout_count}")
     if hasattr(agent, 'policy_updates'):
