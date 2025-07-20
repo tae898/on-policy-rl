@@ -6,6 +6,7 @@ import gymnasium as gym
 import numpy as np
 import torch
 from gymnasium.wrappers import RecordEpisodeStatistics, RecordVideo
+from gymnasium.vector import SyncVectorEnv
 from IPython.display import HTML, clear_output, display
 
 
@@ -78,7 +79,7 @@ def create_env_with_wrappers(
         def episode_trigger(episode_id):
             # episode_id starts from 0, so we add 1 to match our episode numbering
             actual_episode = episode_id + 1
-            
+
             return actual_episode % video_record_interval == 0
 
         env = RecordVideo(
@@ -92,6 +93,56 @@ def create_env_with_wrappers(
     env = RecordEpisodeStatistics(env)
 
     return env
+
+
+def make_vec_envs(
+    config,
+    is_continuous,
+    record_videos=False,
+    video_prefix="training",
+    cleanup_existing=True,
+):
+    action_type = "Continuous" if is_continuous else "Discrete"
+
+    # Create algorithm-specific video folder (same pattern as other training functions)
+    video_folder = f"videos/{video_prefix}_{action_type.lower()}"
+    config_with_videos = config.copy()
+    config_with_videos["video_folder"] = video_folder
+
+    if cleanup_existing:
+        cleanup_videos(video_folder)
+
+    def make_env(env_idx):
+        def _init():
+            # Only the first environment should record videos
+            should_record = record_videos and env_idx == 0
+
+            if should_record:
+                # Use the same video recording setup as other algorithms
+                env = create_env_with_wrappers(
+                    config_with_videos,
+                    is_continuous,
+                    record_videos=True,
+                    video_prefix=video_prefix,
+                    cleanup_existing=False,  # Already cleaned up above
+                )
+            else:
+                # No video recording for other environments
+                env = create_env_with_wrappers(
+                    config_with_videos,
+                    is_continuous,
+                    record_videos=False,
+                    video_prefix=video_prefix,
+                    cleanup_existing=False,
+                )
+            return env
+
+        return _init
+
+    # Create vectorized environment
+    vec_env = SyncVectorEnv([make_env(i) for i in range(config["num_envs"])])
+
+    return vec_env, config_with_videos
 
 
 def display_videos_grid(video_folder, video_prefix, max_videos=None):

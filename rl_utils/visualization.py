@@ -499,7 +499,6 @@ def plot_ppo_variance_analysis(agent, scores, action_type, config, algorithm_nam
     if hasattr(agent, 'policy_updates'):
         print(f"Total Policy Updates: {agent.policy_updates}")
 
-
 def plot_ppo_training_results(scores, losses, config, action_type, algorithm_name="PPO"):
     """
     PPO-specific training results plotting.
@@ -509,3 +508,254 @@ def plot_ppo_training_results(scores, losses, config, action_type, algorithm_nam
 
     # Plot losses with rollout-based x-axis
     plot_ppo_training_losses(losses, config, action_type, algorithm_name)
+
+def plot_vectorized_training_scores(scores, config, action_type, algorithm_name="Algorithm"):
+    """Plot training scores for vectorized environments with proper episode axis."""
+    fig, ax = plt.subplots(1, 1, figsize=(15, 6))
+    fig.suptitle(f'{algorithm_name} ({action_type}) Scores on {config["env_id"]} ({config["num_envs"]} parallel envs)')
+
+    # For vectorized environments, episodes go from 1 to config["episodes"]
+    vectorized_episodes = range(1, len(scores) + 1)
+    
+    # Plot scores
+    ax.plot(
+        vectorized_episodes,
+        scores,
+        label="Vectorized Episode Score",
+        alpha=0.3,
+        color="blue" if action_type == "Discrete" else "red",
+    )
+
+    # Handle moving average properly
+    if len(scores) >= config["window_length"]:
+        smoothed, x_offset = get_moving_average(
+            scores, window=config["window_length"]
+        )
+        smoothed_episodes = range(x_offset + 1, x_offset + 1 + len(smoothed))
+        ax.plot(
+            smoothed_episodes,
+            smoothed,
+            label=f'Smoothed Score ({config["window_length"]} vec-ep)',
+            color="blue" if action_type == "Discrete" else "red",
+            linewidth=2,
+        )
+
+    # Use configurable target score
+    ax.axhline(
+        y=config["target_score"],
+        color="g",
+        linestyle="--",
+        label=f'Target Score ({config["target_score"]})',
+    )
+
+    ax.set_ylabel("Score")
+    ax.set_xlabel("Vectorized Episode (Averaged across parallel envs)")
+    ax.legend(loc="best")
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(1, config["episodes"])  # Ensure x-axis shows intended episode count
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_vectorized_training_losses(losses_dict, config, action_type, algorithm_name="Algorithm"):
+    """
+    Plot training losses for vectorized environments with update step axis.
+    """
+    loss_components = list(losses_dict.keys())
+
+    if len(loss_components) == 0:
+        print("No loss data to plot")
+        return
+
+    # Create single plot
+    fig, ax = plt.subplots(1, 1, figsize=(15, 6))
+    fig.suptitle(f'{algorithm_name} ({action_type}) Loss Components on {config["env_id"]} ({config["num_envs"]} parallel envs)')
+
+    # Color scheme for different loss types
+    colors = {
+        "actor_loss": "goldenrod",
+        "critic_loss": "darkviolet", 
+        "total_loss": "darkred",
+    }
+
+    # For vectorized environments, x-axis represents update steps (1, 2, 3, ...)
+    first_loss = list(losses_dict.values())[0]
+    x_values = range(1, len(first_loss) + 1)
+    x_label = "Update Step"
+
+    # Plot all loss components on the same axes
+    for loss_name, loss_values in losses_dict.items():
+        color = colors.get(loss_name, "black")
+        label = loss_name.replace("_", " ").title()
+
+        # Ensure x_values and loss_values have the same length
+        min_len = min(len(x_values), len(loss_values))
+        x_plot = x_values[:min_len]
+        y_plot = loss_values[:min_len]
+
+        # Plot raw loss values with transparency
+        ax.plot(x_plot, y_plot, label=f'{label} (Raw)', color=color, alpha=0.3)
+
+        # Add moving average if enough data
+        if len(y_plot) >= config["window_length"]:
+            smoothed, _ = get_moving_average(y_plot, window=config["window_length"])
+            # Calculate corresponding x values for smoothed data
+            smoothed_x = x_plot[config["window_length"]-1:][:len(smoothed)]
+            ax.plot(
+                smoothed_x,
+                smoothed,
+                color=color,
+                linewidth=2,
+                label=f'{label} ({config["window_length"]}pt avg)',
+            )
+
+    ax.set_ylabel("Loss Value")
+    ax.set_xlabel(x_label)
+    ax.legend(loc="best")
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_vectorized_variance_analysis(agent, scores, action_type, config, algorithm_name="Algorithm"):
+    """
+    Visualize variance and training stability metrics for vectorized environments.
+    """
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+    fig.suptitle(
+        f"{algorithm_name} Training Analysis ({action_type} Actions) - {config['num_envs']} Parallel Envs", fontsize=16
+    )
+
+    vectorized_episodes = range(1, len(scores) + 1)
+
+    # 1. Episode Scores Distribution
+    ax1.hist(
+        scores, bins=30, alpha=0.7, color="skyblue", edgecolor="black"
+    )
+    ax1.axvline(
+        np.mean(scores),
+        color="red",
+        linestyle="--",
+        label=f"Mean: {np.mean(scores):.1f}",
+    )
+    ax1.axvline(
+        np.median(scores),
+        color="orange",
+        linestyle="--",
+        label=f"Median: {np.median(scores):.1f}",
+    )
+    ax1.set_xlabel("Vectorized Episode Score (Averaged across parallel envs)")
+    ax1.set_ylabel("Frequency")
+    ax1.set_title("Distribution of Vectorized Episode Scores")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # 2. Gradient Norm Over Time (use update steps)
+    if len(agent.gradient_norms) > 0:
+        x_values = range(1, len(agent.gradient_norms) + 1)
+        x_label = "Update Step"
+        
+        ax2.plot(x_values, agent.gradient_norms, alpha=0.6, color="purple")
+
+        if len(agent.gradient_norms) >= config["window_length"]:
+            smoothed, _ = get_moving_average(agent.gradient_norms, window=config["window_length"])
+            smoothed_x = x_values[config["window_length"]-1:][:len(smoothed)]
+            ax2.plot(
+                smoothed_x,
+                smoothed,
+                color="darkviolet",
+                linewidth=2,
+                label=f'Smoothed ({config["window_length"]}pt)',
+            )
+    else:
+        x_label = "Update Step"
+        
+    ax2.set_xlabel(x_label)
+    ax2.set_ylabel("Gradient Norm")
+    ax2.set_title("Gradient Magnitude Over Updates")
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+
+    # 3. Score Variance Over Time - FIXED to properly align with vectorized episodes
+    variance_attr = getattr(agent, 'score_variance_history', [])
+    if len(variance_attr) > 0:
+        # Score variance is calculated per vectorized episode, starting from vectorized episode 1
+        # Each entry in score_variance_history corresponds to one vectorized episode
+        variance_episodes = range(1, len(variance_attr) + 1)
+        
+        ax3.plot(
+            variance_episodes, variance_attr, color="green", alpha=0.7, label="Score Variance", marker='o', markersize=4
+        )
+
+        if len(variance_attr) >= config["window_length"]:
+            smoothed, smoothing_offset = get_moving_average(
+                variance_attr, window=config["window_length"]
+            )
+            smoothed_start_episode = smoothing_offset + 1
+            smoothed_episodes = range(smoothed_start_episode, smoothed_start_episode + len(smoothed))
+            ax3.plot(
+                smoothed_episodes,
+                smoothed,
+                color="darkgreen",
+                linewidth=2,
+                label=f'Smoothed ({config["window_length"]} vec-ep)',
+            )
+    
+    ax3.set_xlabel("Vectorized Episode")
+    ax3.set_ylabel(f"Score Variance (last {config['window_length']} vectorized episodes)")
+    ax3.set_title("Rolling Score Variance")
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+    # Set x-axis limits to match the actual number of vectorized episodes
+    if len(variance_attr) > 0:
+        ax3.set_xlim(1, len(variance_attr))
+    else:
+        ax3.set_xlim(1, config["episodes"])  # Fallback to config episodes
+
+    # 4. Gradient vs Score Correlation
+    if len(agent.gradient_norms) > 0 and len(scores) > 0:
+        min_len = min(len(agent.gradient_norms), len(scores))
+        grad_subset = agent.gradient_norms[:min_len]
+        score_subset = scores[:min_len]
+
+        ax4.scatter(score_subset, grad_subset, alpha=0.6, color="coral")
+
+        if len(grad_subset) > 1:
+            correlation = np.corrcoef(score_subset, grad_subset)[0, 1]
+            ax4.set_title(
+                f"Gradient Norm vs Vectorized Episode Score\nCorrelation: {correlation:.3f}"
+            )
+        else:
+            ax4.set_title("Gradient Norm vs Vectorized Episode Score\n(Insufficient data)")
+
+    ax4.set_xlabel("Vectorized Episode Score (Averaged across parallel envs)")
+    ax4.set_ylabel("Gradient Norm")
+    ax4.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+    # Print statistics
+    stats = agent.get_variance_stats()
+    print(f"\n--- {algorithm_name} Training Statistics ({action_type}) ---")
+    print(f"Vectorized Episode Scores: μ={stats.get('score_mean', 0.0):.2f}, σ={stats.get('score_std', 0.0):.2f}")
+    print(f"Recent Score Variance: {stats.get('recent_score_variance', 0.0):.2f}")
+    print(
+        f"Gradient Norms: μ={stats['gradient_norm_mean']:.4f}, σ={stats['gradient_norm_std']:.4f}"
+    )
+    if hasattr(agent, 'update_step'):
+        print(f"Total Update Steps: {agent.update_step}")
+    if hasattr(agent, 'total_episodes'):
+        print(f"Total Individual Episodes: {agent.total_episodes} (across {config['num_envs']} parallel envs)")
+
+    # Add debug info for variance tracking
+    print(f"Vectorized Episodes Completed: {getattr(agent, 'vectorized_episodes', 0)}")
+    print(f"Score Variance History Length: {len(variance_attr)}")
+
+def plot_vectorized_training_results(scores, losses, config, action_type, algorithm_name="Algorithm"):
+    """
+    Combined plotting function for vectorized environments.
+    """
+    plot_vectorized_training_scores(scores, config, action_type, algorithm_name)

@@ -17,20 +17,26 @@ from .environment import (
     cleanup_videos,
     create_env_with_wrappers,
     display_latest_video,
+    make_vec_envs
 )
 from .networks import PolicyNetwork, ActorCriticNetwork
 from .visualization import (
     get_moving_average,
     plot_training_results,
     plot_variance_analysis,
+    plot_vectorized_training_results,
+    plot_vectorized_variance_analysis,
 )
 
 __all__ = [
     "create_env_with_wrappers",
+    "make_vec_envs",
     "display_latest_video",
     "cleanup_videos",
     "plot_training_results",
     "plot_variance_analysis",
+    "plot_vectorized_training_results",
+    "plot_vectorized_variance_analysis",
     "get_moving_average",
     "PolicyNetwork",
     "ActorCriticNetwork",

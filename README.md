@@ -17,7 +17,8 @@ policy optimization with variance reduction techniques.
 **Key Theme**: How to solve the high variance problem in policy gradients through:
 1. **Baseline subtraction** (Actor-Critic MC)
 2. **Bootstrapping** (Actor-Critic TD) 
-3. **Trust regions** (PPO)
+3. **Parallel data collection** (A2C)
+4. **Trust regions** (PPO)
 
 ## 🚀 Our Learning Environment: LunarLander-v3
 
@@ -58,7 +59,7 @@ costs, ±100 for crash/landing
 
 ## 📚 On-Policy Algorithm Progression
 
-This series focuses on four fundamental **on-policy** RL algorithms that showcase the progression from pure policy gradients to advanced policy optimization with variance reduction techniques.
+This series focuses on five fundamental **on-policy** RL algorithms that showcase the progression from pure policy gradients to advanced policy optimization with variance reduction techniques.
 
 ### 01. REINFORCE (Pure Policy Gradients)
 
@@ -93,7 +94,17 @@ This series focuses on four fundamental **on-policy** RL algorithms that showcas
 - **Variance**: Lower than MC methods, but introduces bias
 - **Data Usage**: Fresh experience only (on-policy)
 
-### 04. PPO (Proximal Policy Optimization)
+### 04. A2C (Advantage Actor-Critic)
+
+- **Focus**: Parallel environments and synchronous updates - practical actor-critic
+- **Action Space**: Both discrete AND continuous
+- **Key Concepts**: Parallel data collection, synchronous updates, improved sample efficiency
+- **Value Function**: $V(s)$ with parallel advantage estimation
+- **Architecture Innovation**: Multiple parallel environments for stable learning
+- **Practical Solution**: Simpler, more stable alternative to A3C
+- **Data Usage**: Fresh experience only (on-policy)
+
+### 05. PPO (Proximal Policy Optimization)
 
 - **Focus**: Trust regions, clipped objectives, and modern policy optimization
 - **Action Space**: Both discrete AND continuous
@@ -101,6 +112,7 @@ This series focuses on four fundamental **on-policy** RL algorithms that showcas
 - **Value Function**: $V(s)$ with Generalized Advantage Estimation (GAE)
 - **Key Innovation**: Clipped policy updates prevent destructive policy changes
 - **Modern Standard**: State-of-the-art on-policy algorithm used in practice
+- **Architecture**: Supports both single and parallel environments
 - **Data Usage**: Fresh experience only (on-policy)
 
 ## 🎯 Learning Progression: The Variance-Bias Journey
@@ -130,24 +142,42 @@ Where $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ (TD error)
 - **Step-by-Step Learning**: Can learn from individual transitions
 - **On-Policy**: Still uses data from current policy only
 
-### Solution 3: Stable Policy Updates (Control Update Size)
+### Solution 3: Parallel Data Collection (Stabilize Learning)
+
+**A2C**: Synchronous parallel environment collection with batch updates
+- **Stable Gradients**: Multiple parallel experiences reduce variance
+- **Sample Efficiency**: Better gradient estimates from diverse parallel data
+- **Practical Implementation**: Simpler than asynchronous methods
+- **On-Policy**: Fresh data from multiple parallel policies
+
+### Solution 4: Trust Regions (Control Update Size)
 
 **PPO**: Adds trust region constraints to prevent destructive policy changes
 - **Clipped Objective**: Limits how much policy can change per update
 - **GAE**: Sophisticated advantage estimation balancing bias and variance
 - **Practical Stability**: Works reliably across many environments
+- **Flexible Architecture**: Single or parallel environments
 - **On-Policy**: Uses fresh data for each policy update
 
 ## 📊 On-Policy Algorithm Comparison Matrix
 
-| Algorithm | Value Function | Bellman Equation | Variance | Bias | Update Frequency | Data Usage |
-|-----------|---------------|------------------|----------|------|------------------|------------|
-| REINFORCE | None | ❌ No | Very High | None | Per Episode | On-Policy |
-| Actor-Critic (MC) | $V(s) \rightarrow G_t$ | ❌ No | High | None | Per Episode | On-Policy |
-| Actor-Critic (TD) | $V(s) \rightarrow r + \gamma V(s')$ | ✅ Yes | Medium | Low | Per Step | On-Policy |
-| PPO | $V(s)$ + GAE | ✅ Yes | Low | Low | Per Batch | On-Policy |
+| Algorithm | Value Function | Bellman Equation | Variance | Bias | Update Frequency | Environments | Data Usage |
+|-----------|---------------|------------------|----------|------|------------------|--------------|------------|
+| REINFORCE | None | ❌ No | Very High | None | Per Episode | Single | On-Policy |
+| Actor-Critic (MC) | $V(s) \rightarrow G_t$ | ❌ No | High | None | Per Episode | Single | On-Policy |
+| Actor-Critic (TD) | $V(s) \rightarrow r + \gamma V(s')$ | ✅ Yes | Medium | Low | Per Step | Single | On-Policy |
+| A2C | $V(s)$ + Parallel | ✅ Yes | Low | Low | Per Batch | Multiple | On-Policy |
+| PPO | $V(s)$ + GAE | ✅ Yes | Very Low | Low | Per Batch | Flexible | On-Policy |
 
 ## 🔄 Key On-Policy Learning Concepts
+
+### The Algorithm Evolution Pattern
+
+**Theoretical Breakthroughs → Practical Simplifications**:
+- **A3C → A2C**: Asynchronous complexity → Synchronous simplicity
+- **TRPO → PPO**: Complex conjugate gradients → Simple clipping
+
+This series demonstrates both the theoretical innovations and their practical implementations.
 
 ### On-Policy vs Off-Policy
 
@@ -157,7 +187,7 @@ Where $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ (TD error)
 - **Sample efficiency**: Lower (can't reuse old data)
 - **Stability**: Generally more stable and easier to tune
 - **Modern Applications**: Standard for LLM fine-tuning (RLHF), robotics, continuous control
-- **Examples**: REINFORCE, Actor-Critic, PPO, A3C
+- **Examples**: REINFORCE, Actor-Critic, A2C, PPO, A3C
 
 **Off-Policy Methods** (not covered in this series):
 - Can learn from data generated by **any policy** (including old versions)
@@ -177,7 +207,7 @@ Where $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ (TD error)
 - Must wait for episode completion
 - No bootstrapping
 
-**Temporal Difference Methods** (Actor-Critic TD, PPO):
+**Temporal Difference Methods** (Actor-Critic TD, A2C, PPO):
 - Use **one-step lookahead** $r_t + \gamma V(s_{t+1})$
 - **Lower variance** but **introduces bias**
 - Can learn from incomplete episodes
@@ -188,12 +218,14 @@ Where $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ (TD error)
 1. **Baseline Subtraction**: $G_t - b$ where $b$ doesn't depend on actions
 2. **Value Function Approximation**: Learn $V(s)$ to predict returns
 3. **Advantage Estimation**: Use $A(s,a) = Q(s,a) - V(s)$ instead of raw returns
-4. **Trust Regions**: Limit policy update magnitude (PPO clipping)
+4. **Parallel Data Collection**: Multiple environments for stable gradient estimates
+5. **Trust Regions**: Limit policy update magnitude (PPO clipping)
 
 ### The Bias-Variance Tradeoff in On-Policy Methods
 
 - **High Variance → Slow Learning**: REINFORCE takes many episodes to converge
 - **Bias Introduction → Faster Learning**: TD methods converge faster but to potentially suboptimal policies
+- **Parallel Collection → Stable Learning**: A2C uses multiple environments for stable gradients
 - **Modern Methods**: Balance bias and variance for practical performance
 - **On-Policy Constraint**: All methods must use fresh data, affecting sample efficiency
 
@@ -207,7 +239,8 @@ rl/
 ├── 01.reinforce.ipynb            # Pure policy gradients
 ├── 02.actor-critic-mc.ipynb      # Actor-critic with Monte Carlo
 ├── 03.actor-critic-td.ipynb      # Actor-critic with Temporal Difference  
-├── 04.ppo.ipynb                  # Proximal Policy Optimization
+├── 04.a2c.ipynb                  # Advantage Actor-Critic (parallel envs)
+├── 05.ppo.ipynb                  # Proximal Policy Optimization
 ├── rl_utils/                      # Shared utility package
 │   ├── __init__.py               # Package initialization
 │   ├── config.py                 # Configuration management
@@ -226,7 +259,7 @@ rl/
 
 **Neural networks** (`rl_utils.networks`):
 - `PolicyNetwork`: Supports both discrete and continuous actions
-- `ValueNetwork`: State value function approximation (for notebooks 02-04)
+- `ValueNetwork`: State value function approximation (for notebooks 02-05)
 - Automatic parameter counting and network information
 
 **Visualization** (`rl_utils.visualization`):
