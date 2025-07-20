@@ -759,3 +759,4 @@ def plot_vectorized_training_results(scores, losses, config, action_type, algori
     Combined plotting function for vectorized environments.
     """
     plot_vectorized_training_scores(scores, config, action_type, algorithm_name)
+    plot_vectorized_training_losses(losses, config, action_type, algorithm_name)
