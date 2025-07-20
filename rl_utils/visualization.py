@@ -83,8 +83,8 @@ def plot_training_losses(losses_dict, config, action_type, algorithm_name="Algor
 
     # Color scheme for different loss types - avoid blue/red used for scores
     colors = {
-        "policy_loss": "orange",      # Keep orange for policy loss
-        "value_loss": "purple",       # Keep purple for value loss
+        "policy_loss": "goldenrod",   # same as actor loss
+        "value_loss": "darkviolet",   # same as critic loss
         "entropy_loss": "green",      # Keep green for entropy loss
         "total_loss": "darkred",      # Change from red to darkred to differentiate from continuous scores
         "actor_loss": "goldenrod",    # Change from blue to goldenrod
