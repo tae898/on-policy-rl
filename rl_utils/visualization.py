@@ -618,7 +618,7 @@ def plot_rollout_based_training_scores(
 
 def plot_rollout_based_losses(
     losses_dict, rollout_history, neural_net_history, config, action_type,
-    algorithm_name="Algorithm"
+    algorithm_name="Algorithm", per_update_losses=None
 ):
     """Plot losses for rollout-based algorithms with rollout/NN update x-axes."""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(18, 12))
@@ -628,9 +628,10 @@ def plot_rollout_based_losses(
     
     # Colors for different loss components
     colors = {
-        "total_loss": "black",
-        "actor_loss": "blue" if action_type == "Discrete" else "red",
-        "critic_loss": "green",
+        "total_loss": "darkred",
+        "actor_loss": "goldenrod",
+        "critic_loss": "darkviolet",
+        "entropy_loss": "green",
     }
 
     # 1. Total Loss vs Rollouts
@@ -676,76 +677,134 @@ def plot_rollout_based_losses(
     ax2.grid(True, alpha=0.3)
     ax2.legend()
 
-    # 3. Total Loss vs Neural Network Updates (if available)
-    if (neural_net_history and "total_loss" in losses_dict and
+    # 3. Total Loss vs Neural Network Updates (using fine-grained data if available)
+    title_suffix = ""  # Initialize title suffix
+    if per_update_losses and "total_loss" in per_update_losses:
+        # Use the actual per-minibatch losses mapped to neural network updates
+        loss_data = per_update_losses["total_loss"]
+        nn_update_numbers = range(1, len(loss_data) + 1)
+        
+        if len(loss_data) >= smoothing_window:
+            smoothed, offset = get_moving_average(loss_data, window=smoothing_window)
+            smoothed_x = range(offset + 1, offset + 1 + len(smoothed))
+        else:
+            smoothed = loss_data
+            smoothed_x = nn_update_numbers
+            
+        ax3.plot(
+            smoothed_x, smoothed, color=colors["total_loss"],
+            linewidth=2, label="Total Loss (per NN update)"
+        )
+        title_suffix = f"(fine-grained, {smoothing_window}-update avg)"
+        
+    elif (neural_net_history and "total_loss" in losses_dict and
             len(losses_dict["total_loss"]) > 0):
-        # Map rollout indices to neural network updates
+        # Fallback to approximation if per-update data not available
         if len(neural_net_history) > 0 and len(losses_dict["total_loss"]) > 0:
-            # Calculate cumulative neural net updates per rollout
-            updates_per_rollout = (
-                len(neural_net_history) / len(losses_dict["total_loss"])
-            )
-            nn_updates_per_rollout = [
-                int(i * updates_per_rollout)
-                for i in range(1, len(losses_dict["total_loss"]) + 1)
-            ]
+            # Create mapping from rollout number to actual NN update count
+            rollout_to_nn_update = {}
             
-            if len(losses_dict["total_loss"]) >= smoothing_window:
-                smoothed, offset = get_moving_average(
-                    losses_dict["total_loss"], window=smoothing_window
+            # Calculate how many NN updates happen per rollout on average
+            total_nn_updates = len(neural_net_history)
+            total_rollouts = len(losses_dict["total_loss"])
+            
+            if total_rollouts > 0:
+                # Map each rollout to its corresponding NN update count
+                for rollout_idx in range(total_rollouts):
+                    # Calculate the NN update count at the end of this rollout
+                    progress_ratio = (rollout_idx + 1) / total_rollouts
+                    nn_update_idx = int(progress_ratio * total_nn_updates) - 1
+                    if nn_update_idx >= 0 and nn_update_idx < len(neural_net_history):
+                        rollout_to_nn_update[rollout_idx] = (
+                            neural_net_history[nn_update_idx]
+                        )
+                    else:
+                        rollout_to_nn_update[rollout_idx] = rollout_idx + 1  # fallback
+                
+                # Create x-values using actual NN update counts
+                nn_x_values = [rollout_to_nn_update[i] for i in range(total_rollouts)]
+                
+                if len(losses_dict["total_loss"]) >= smoothing_window:
+                    smoothed, offset = get_moving_average(
+                        losses_dict["total_loss"], window=smoothing_window
+                    )
+                    nn_x_values = nn_x_values[offset:]
+                else:
+                    smoothed = losses_dict["total_loss"]
+            
+                ax3.plot(
+                    nn_x_values, smoothed, color=colors["total_loss"],
+                    linewidth=2, label="Total Loss (approx from rollouts)"
                 )
-                nn_x_values = nn_updates_per_rollout[offset:]
-            else:
-                smoothed = losses_dict["total_loss"]
-                nn_x_values = nn_updates_per_rollout
-            
-            ax3.plot(
-                nn_x_values, smoothed, color=colors["total_loss"],
-                linewidth=2, label="Total Loss"
-            )
+                title_suffix = f"(approx from rollouts, {smoothing_window}-rollout avg)"
     
     ax3.set_xlabel("Neural Network Update Number")
     ax3.set_ylabel("Total Loss")
-    ax3.set_title(
-        f"Total Loss vs Neural Network Updates ({smoothing_window}-rollout avg)"
-    )
+    ax3.set_title(f"Total Loss vs Neural Network Updates {title_suffix}")
     ax3.grid(True, alpha=0.3)
     ax3.legend()
 
-    # 4. Raw loss values without smoothing (recent trend)
-    recent_window = min(20, len(losses_dict.get("total_loss", [])))
-    if recent_window > 0:
-        recent_rollouts = range(
-            max(1, len(losses_dict["total_loss"]) - recent_window + 1),
-            len(losses_dict["total_loss"]) + 1
-        )
-        recent_total = losses_dict["total_loss"][-recent_window:]
-        ax4.plot(
-            recent_rollouts, recent_total, color=colors["total_loss"],
-            linewidth=2, label="Total Loss", alpha=0.7
-        )
-        
-        if "actor_loss" in losses_dict:
-            recent_actor = losses_dict["actor_loss"][-recent_window:]
-            ax4.plot(
-                recent_rollouts, recent_actor, color=colors["actor_loss"],
-                linewidth=1, label="Actor Loss", alpha=0.7
-            )
-        
-        if "critic_loss" in losses_dict:
-            recent_critic = losses_dict["critic_loss"][-recent_window:]
-            ax4.plot(
-                recent_rollouts, recent_critic, color=colors["critic_loss"],
-                linewidth=1, label="Critic Loss", alpha=0.7
-            )
+    # 4. Loss Components vs Neural Network Updates (if per-update data available)
+    if per_update_losses:
+        for loss_name in ["actor_loss", "critic_loss", "entropy_loss"]:
+            if loss_name in per_update_losses and len(per_update_losses[loss_name]) > 0:
+                loss_data = per_update_losses[loss_name]
+                nn_update_numbers = range(1, len(loss_data) + 1)
+                
+                if len(loss_data) >= smoothing_window:
+                    smoothed, offset = get_moving_average(
+                        loss_data, window=smoothing_window
+                    )
+                    smoothed_x = range(offset + 1, offset + 1 + len(smoothed))
+                else:
+                    smoothed = loss_data
+                    smoothed_x = nn_update_numbers
+                
+                color = colors.get(loss_name, "gray")
+                label = loss_name.replace("_", " ").title()
+                ax4.plot(smoothed_x, smoothed, color=color, linewidth=2, label=label)
 
-    ax4.set_xlabel("Rollout Number")
-    ax4.set_ylabel("Loss Value")
-    ax4.set_title(
-        f"Recent Training Losses (last {recent_window} rollouts, unsmoothed)"
-    )
-    ax4.grid(True, alpha=0.3)
-    ax4.legend()
+        ax4.set_xlabel("Neural Network Update Number")
+        ax4.set_ylabel("Loss Value")
+        ax4.set_title(
+            f"Loss Components vs Neural Network Updates ({smoothing_window}-update avg)"
+        )
+        ax4.grid(True, alpha=0.3)
+        ax4.legend()
+    
+    else:
+        # Fallback: Raw loss values without smoothing (recent trend)
+        recent_window = min(20, len(losses_dict.get("total_loss", [])))
+        if recent_window > 0:
+            recent_rollouts = range(
+                max(1, len(losses_dict["total_loss"]) - recent_window + 1),
+                len(losses_dict["total_loss"]) + 1
+            )
+            recent_total = losses_dict["total_loss"][-recent_window:]
+            ax4.plot(
+                recent_rollouts, recent_total, color=colors["total_loss"],
+                linewidth=2, label="Total Loss", alpha=0.7
+            )
+            
+            if "actor_loss" in losses_dict:
+                recent_actor = losses_dict["actor_loss"][-recent_window:]
+                ax4.plot(
+                    recent_rollouts, recent_actor, color=colors["actor_loss"],
+                    linewidth=1, label="Actor Loss", alpha=0.7
+                )
+            
+            if "critic_loss" in losses_dict:
+                recent_critic = losses_dict["critic_loss"][-recent_window:]
+                ax4.plot(
+                    recent_rollouts, recent_critic, color=colors["critic_loss"],
+                    linewidth=1, label="Critic Loss", alpha=0.7
+                )
+
+        ax4.set_xlabel("Recent Rollout Number")
+        ax4.set_ylabel("Loss Value")
+        ax4.set_title(f"Recent Loss Trends (last {recent_window} rollouts)")
+        ax4.grid(True, alpha=0.3)
+        ax4.legend()
 
     plt.tight_layout()
     plt.show()
@@ -753,11 +812,11 @@ def plot_rollout_based_losses(
 
 def plot_rollout_based_training_results(
     scores, losses, rollout_history, neural_net_history, config, action_type,
-    algorithm_name="Algorithm"
+    algorithm_name="Algorithm", per_update_losses=None
 ):
     """Combined plotting for rollout-based algorithms."""
     plot_rollout_based_training_scores(scores, config, action_type, algorithm_name)
     plot_rollout_based_losses(
         losses, rollout_history, neural_net_history, config, action_type,
-        algorithm_name
+        algorithm_name, per_update_losses
     )
