@@ -26,6 +26,7 @@ from .visualization import (
     plot_variance_analysis,
     plot_vectorized_training_results,
     plot_vectorized_variance_analysis,
+    plot_rollout_based_training_results,
 )
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "plot_variance_analysis",
     "plot_vectorized_training_results",
     "plot_vectorized_variance_analysis",
+    "plot_rollout_based_training_results",
     "get_moving_average",
     "PolicyNetwork",
     "ActorCriticNetwork",
