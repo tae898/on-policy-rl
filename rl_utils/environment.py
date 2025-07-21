@@ -102,10 +102,8 @@ def make_vec_envs(
     video_prefix="training",
     cleanup_existing=True,
 ):
-    action_type = "Continuous" if is_continuous else "Discrete"
-
     # Create algorithm-specific video folder (same pattern as other training functions)
-    video_folder = f"videos/{video_prefix}_{action_type.lower()}"
+    video_folder = f"videos/{video_prefix}"
     config_with_videos = config.copy()
     config_with_videos["video_folder"] = video_folder
 
