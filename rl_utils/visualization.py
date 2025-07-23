@@ -278,29 +278,6 @@ def plot_variance_analysis(
     plt.tight_layout()
     plt.show()
 
-    # Print basic statistics with corrected terminology
-    stats = agent.get_variance_stats()
-    print(f"\n--- {algorithm_name} Training Statistics ({action_type}) ---")
-    
-    # Print both score and return stats for MC methods, only scores for TD/PPO
-    if hasattr(agent, 'episode_returns') and len(getattr(agent, 'episode_returns', [])) > 0:
-        # MC methods: show both scores and returns
-        print(f"Episode Scores: μ={stats['score_mean']:.2f}, σ={stats['score_std']:.2f}")
-        print(f"Episode Returns (G_0): μ={stats['return_mean']:.2f}, σ={stats['return_std']:.2f}")
-        print(f"Recent Score Variance: {stats.get('recent_score_variance', 0.0):.2f}")
-        print(f"Recent Return Variance: {stats.get('recent_return_variance', 0.0):.2f}")
-    else:
-        # TD/PPO methods: only scores available
-        print(f"Episode Scores: μ={stats.get('score_mean', stats.get('return_mean', 0.0)):.2f}, σ={stats.get('score_std', stats.get('return_std', 0.0)):.2f}")
-        print(f"Recent Score Variance: {stats.get('recent_score_variance', stats.get('recent_return_variance', 0.0)):.2f}")
-    
-    print(
-        f"Gradient Norms: μ={stats['gradient_norm_mean']:.4f}, σ={stats['gradient_norm_std']:.4f}"
-    )
-    if hasattr(agent, 'update_step'):
-        print(f"Total Update Steps: {agent.update_step}")
-
-
 def plot_vectorized_training_scores(scores, config, action_type, algorithm_name="Algorithm"):
     """Plot training scores for vectorized environments with proper episode axis."""
     fig, ax = plt.subplots(1, 1, figsize=(15, 6))
@@ -528,23 +505,6 @@ def plot_vectorized_variance_analysis(agent, scores, action_type, config, algori
 
     plt.tight_layout()
     plt.show()
-
-    # Print statistics
-    stats = agent.get_variance_stats()
-    print(f"\n--- {algorithm_name} Training Statistics ({action_type}) ---")
-    print(f"Vectorized Episode Scores: μ={stats.get('score_mean', 0.0):.2f}, σ={stats.get('score_std', 0.0):.2f}")
-    print(f"Recent Score Variance: {stats.get('recent_score_variance', 0.0):.2f}")
-    print(
-        f"Gradient Norms: μ={stats['gradient_norm_mean']:.4f}, σ={stats['gradient_norm_std']:.4f}"
-    )
-    if hasattr(agent, 'update_step'):
-        print(f"Total Update Steps: {agent.update_step}")
-    if hasattr(agent, 'total_episodes'):
-        print(f"Total Individual Episodes: {agent.total_episodes} (across {config['num_envs']} parallel envs)")
-
-    # Add debug info for variance tracking
-    print(f"Vectorized Episodes Completed: {getattr(agent, 'vectorized_episodes', 0)}")
-    print(f"Score Variance History Length: {len(variance_attr)}")
 
 def plot_vectorized_training_results(scores, losses, config, action_type, algorithm_name="Algorithm"):
     """
