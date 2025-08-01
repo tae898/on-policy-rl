@@ -48,7 +48,7 @@ Five fundamental on-policy RL algorithms showcasing progression from pure policy
 
 - **Focus**: Parallel environments and synchronous updates
 - **Innovation**: Multiple parallel environments for stable learning
-- **Variance**: Low | **Update**: Per batch
+- **Variance**: Low | **Update**: Per step and batch
 
 ### 05. PPO (Proximal Policy Optimization)
 
@@ -62,15 +62,18 @@ Five fundamental on-policy RL algorithms showcasing progression from pure policy
 
 **REINFORCE**: $\nabla J(\theta) = \mathbb{E}[\nabla \log \pi_\theta(a|s) \cdot G_t]$
 
-- High variance: $G_t$ varies wildly | Unbiased: Uses true returns
+- High variance: $G_t$ varies wildly
+- Unbiased: Uses true returns
 
 ### Solution Evolution
 
 1. **Baselines** (AC-MC): $\nabla J(\theta) = \mathbb{E}[\nabla \log \pi_\theta(a|s) \cdot (G_t - V(s_t))]$
-   - Lower variance through baseline subtraction | Still unbiased
+   - Lower variance through baseline subtraction
+   - Still unbiased
 
 2. **Bootstrapping** (AC-TD): $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$
-   - Much lower variance via single-step updates | Introduces bias
+   - Much lower variance via single-step updates
+   - Introduces bias
 
 3. **Parallel Collection** (A2C): Multiple environments → stable gradients
 
@@ -87,7 +90,7 @@ Five fundamental on-policy RL algorithms showcasing progression from pure policy
 | A2C            | 152.1 🟢       | 162.2 🟢         | 0.578-0.611 🟡       | Parallel environments |
 | PPO            | 235.7 🌟       | 231.4 🌟         | 0.178-0.251 🟢       | Trust regions + GAE   |
 
-**Key Insights**: REINFORCE → PPO shows huge score point improvement. Continuous actions failed in early methods, but mastered by PPO. Stability (Score CV) improved from >3.0 to <0.3.
+**Key Insights**: REINFORCE → PPO shows huge score point improvement. Stability (Score CV) improved from >3.0 to <0.3.
 
 ## 🔄 Core Concepts
 
@@ -109,11 +112,13 @@ Five fundamental on-policy RL algorithms showcasing progression from pure policy
 
 **Monte Carlo** (REINFORCE, AC-MC): Complete episode returns $G_t$
 
-- Unbiased but high variance | Must wait for episode completion
+- Unbiased but high variance
+- Must wait for episode completion
 
 **Temporal Difference** (AC-TD, A2C, PPO): One-step lookahead $r_t + \gamma V(s_{t+1})$
 
-- Lower variance but introduces bias | Can learn from incomplete episodes
+- Lower variance but introduces bias
+- Can learn from incomplete episodes
 
 ## 🛠️ Implementation & Getting Started
 
