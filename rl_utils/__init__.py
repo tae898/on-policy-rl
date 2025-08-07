@@ -12,7 +12,7 @@ This package separates infrastructure code from algorithm-specific learning cont
 
 __version__ = "1.0.0"
 
-from .config import set_seeds
+from .utils import set_seeds, RunningMeanStd
 from .environment import (
     cleanup_videos,
     create_env_with_wrappers,
@@ -43,4 +43,5 @@ __all__ = [
     "PolicyNetwork",
     "ActorCriticNetwork",
     "set_seeds",
+    "RunningMeanStd",
 ]

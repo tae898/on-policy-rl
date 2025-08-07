@@ -2,6 +2,45 @@
 
 [![DOI](https://zenodo.org/badge/1002873241.svg)](https://doi.org/10.5281/zenodo.15869035)
 
+## 🎯 Motivation: Why Study Classical RL in the LLM Era?
+
+Reinforcement Learning has fundamentally changed. We've shifted from theory-heavy
+approaches to **"whatever works with massive function approximators"**. Modern RL for
+LLMs often abandons sophisticated value functions and critics in favor of simpler, more
+robust methods.
+
+**Case Study: GRPO (Group Relative Policy Optimization)**
+
+Recent LLM fine-tuning methods like GRPO are surprisingly simple - they look more like **vanilla REINFORCE with clever hacks** than modern RL:
+
+- ❌ **No critic network** (unlike Actor-Critic, A2C, PPO)
+- ❌ **No value function estimation**
+- ❌ **No bootstrapping or TD learning**
+- ❌ **No discount factor**
+- ✅ **Pure policy gradients** with group-relative advantage normalization
+- ✅ **Reward model scores** instead of environment rewards
+
+**The Irony**: After decades of developing sophisticated Actor-Critic methods, modern
+LLM training often returns to **REINFORCE-style simplicity** with domain-specific
+adaptations.
+
+### 🔄 Why Learn the Foundations?
+
+Understanding classical on-policy RL is crucial because:
+
+1. **Historical Context**: See how we evolved from pure policy gradients to complex
+   methods and back to simplicity
+2. **Design Principles**: Understand why certain choices work (baselines, trust regions,
+   parallel collection)
+3. **Future Adaptation**: When GRPO-style methods fail, you'll know which classical
+   techniques to borrow
+4. **Transfer Learning**: Apply RL principles to new domains beyond LLMs
+
+**Bottom Line**: Modern RL is "classical algorithms + massive models + domain hacks".
+You need to understand the classical part to innovate effectively.
+
+---
+
 Educational Jupyter notebooks teaching **on-policy reinforcement learning** algorithms from fundamentals to state-of-the-art. Demonstrates the progressive evolution of policy gradient methods using **LunarLander-v3** for consistent comparison.
 
 **Modern Relevance (2025)**: On-policy RL is the standard for fine-tuning Large Language Models (LLMs). PPO is used in RLHF for training ChatGPT, Claude, and Gemini due to its stability advantages.
@@ -88,9 +127,9 @@ Five fundamental on-policy RL algorithms showcasing progression from pure policy
 | AC-MC (Value)  | 52.7 🟡        | 90.7 🟡          | 0.802-1.898 🟠       | Learned baselines     |
 | AC-TD          | 163.0 🟢       | -43.6 ❌         | 2.390-2.413 🔴       | Bootstrapping         |
 | A2C            | 152.1 🟢       | 162.2 🟢         | 0.578-0.611 🟡       | Parallel environments |
-| PPO            | 235.7 🌟       | 231.4 🌟         | 0.178-0.251 🟢       | Trust regions + GAE   |
+| PPO            | 260.8 🌟       | 266.9 🌟         | 0.123-0.138 🟢       | Trust regions + GAE   |
 
-**Key Insights**: REINFORCE → PPO shows huge score point improvement. Stability (Score CV) improved from >3.0 to <0.3.
+**Key Insights**: REINFORCE → PPO shows huge score point improvement. Stability (Score CV) improved from >3.0 to <0.14.
 
 ## 🔄 Core Concepts
 
@@ -131,6 +170,7 @@ Five fundamental on-policy RL algorithms showcasing progression from pure policy
 ├── 04.a2c.ipynb                  # Advantage Actor-Critic (parallel envs)
 ├── 05.ppo.ipynb                  # Proximal Policy Optimization
 ├── rl_utils/                     # Shared utilities
+│   ├── utils.py                  # helper functions
 │   ├── networks.py               # PolicyNetwork, ActorCriticNetwork
 │   ├── environment.py            # Environment wrappers, video recording
 │   └── visualization.py          # Plotting and analysis functions
@@ -187,3 +227,4 @@ Planning **[off-policy-rl](https://github.com/tae898/off-policy-rl)** covering D
 - [Addressing Function Approximation Error in Actor-Critic Methods](https://arxiv.org/abs/1802.09477)
 - [Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor](https://arxiv.org/abs/1801.01290)
 - [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
+- [DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models](https://arxiv.org/abs/2402.03300)

@@ -103,12 +103,13 @@ def make_vec_envs(
     cleanup_existing=True,
 ):
     # Create algorithm-specific video folder (same pattern as other training functions)
-    video_folder = f"videos/{video_prefix}"
     config_with_videos = config.copy()
-    config_with_videos["video_folder"] = video_folder
+    config_with_videos["video_folder"] = os.path.join(
+        config["video_folder"], video_prefix
+    )
 
     if cleanup_existing:
-        cleanup_videos(video_folder)
+        cleanup_videos(config_with_videos["video_folder"])
 
     def make_env(env_idx):
         def _init():
